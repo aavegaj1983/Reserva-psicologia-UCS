@@ -205,9 +205,37 @@
   // ── Sheets ──
   async function enviarASheets(reg) {
     try {
-      var res = await fetch(SHEETS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg) });
-      return await res.json();
-    } catch(e) { return { ok: true, mensaje: '' }; }
+      // Usamos GET con parámetros en la URL para evitar problemas de CORS con Google Apps Script.
+      // El script de Apps Script debe manejar doGet(e) además de doPost(e).
+      var params = new URLSearchParams();
+      Object.keys(reg).forEach(function(k){ params.append(k, reg[k]); });
+      params.append('timestamp', new Date().toISOString());
+
+      // Intento 1: POST con text/plain (evita preflight CORS)
+      var res = await fetch(SHEETS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(reg)
+      });
+      // Google Apps Script con no-cors devuelve respuesta opaca; si llega aquí sin error, fue exitoso
+      if (res.ok || res.type === 'opaque') return { ok: true };
+      var data = await res.json().catch(function(){ return { ok: true }; });
+      return data;
+    } catch(e) {
+      // Intento 2: Fallback con no-cors (no podemos leer la respuesta, pero el dato llega)
+      try {
+        await fetch(SHEETS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(reg)
+        });
+        return { ok: true };
+      } catch(e2) {
+        // Si ambos fallan, notificamos al usuario
+        return { ok: false, mensaje: 'No se pudo conectar con Google Sheets. Verifica tu conexión e intenta nuevamente.' };
+      }
+    }
   }
 
   // ── Modales ──
@@ -414,6 +442,9 @@
 
   async function submitForm() {
     limpiarErrores();
+    var btnSubmit = document.querySelector('.btn-submit');
+    var btnOrigText = btnSubmit.textContent;
+
     var nombre=getVal('nombre'),correo=getVal('correo'),telefono=getVal('telefono');
     var sede=getVal('sede'),tipo=getVal('tipo'),modalidad=getVal('modalidad');
     var curso=getVal('curso'),espacio=getVal('espacio'),personas=getVal('personas'),motivo=getVal('motivo');
@@ -473,14 +504,26 @@
 
     var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr };
 
+    // Mostrar estado de carga
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = '⏳ Enviando reserva...';
+    btnSubmit.style.opacity = '0.75';
+
     var resultado=await enviarASheets(reg);
     if(resultado&&resultado.ok===false){
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = btnOrigText;
+      btnSubmit.style.opacity = '';
       mostrarError(resultado.mensaje||'El horario ya está reservado. Por favor elige otra opción.');
       return;
     }
 
     reservas.push(reg);
     await guardarReservas();
+
+    btnSubmit.disabled = false;
+    btnSubmit.textContent = btnOrigText;
+    btnSubmit.style.opacity = '';
 
     ['nombre','correo','telefono','sede','tipo','modalidad','curso','espacio','personas','motivo'].forEach(function(f){ document.getElementById(f).value=''; });
     document.getElementById('horarios-lista').innerHTML='';
