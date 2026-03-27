@@ -283,7 +283,8 @@
       inp.value = '';
       err.style.display = 'none';
       document.getElementById('admin-step-login').style.display = 'none';
-      document.getElementById('btn-abrir-sheet').href = SHEETS_LINK;
+      document.getElementById('admin-url-text').textContent = SHEETS_LINK;
+      document.getElementById('copied-msg').style.display = 'none';
       document.getElementById('admin-step-access').style.display = 'block';
     } else {
       err.style.display = 'block';
@@ -291,7 +292,43 @@
     }
   }
 
-  function cerrarAdminAccess() {
+  function copiarLink() {
+    var btn = document.getElementById('btn-copiar');
+    var msg = document.getElementById('copied-msg');
+
+    function exito() {
+      msg.style.display = 'block';
+      btn.textContent = '✓ Copiado';
+      btn.style.background = '#276749';
+      setTimeout(function() {
+        btn.textContent = 'Copiar';
+        btn.style.background = '#2b6cb0';
+        msg.style.display = 'none';
+      }, 3000);
+    }
+
+    function fallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = SHEETS_LINK;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try {
+        var ok = document.execCommand('copy');
+        if (ok) exito();
+      } catch(e) {}
+      document.body.removeChild(ta);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(SHEETS_LINK).then(exito).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+    function cerrarAdminAccess() {
     cerrarModal('modal-admin-login');
     setTimeout(function() {
       document.getElementById('admin-step-login').style.display = 'block';
