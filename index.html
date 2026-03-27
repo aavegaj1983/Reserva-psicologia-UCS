@@ -179,7 +179,15 @@
   var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyoPbqMKpuiolrzWv5cXU4SMokSMJU2sIcSVHTheG4RZXIbX_EbRqShE-YR4RPH2Qs7/exec';
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
-  var today       = new Date().toISOString().split('T')[0];
+  // Fecha de hoy en hora local (evita desfase UTC-5 de Perú)
+  function getTodayLocal() {
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  var today = getTodayLocal();
   var reservas    = [];
 
   // ── Storage (no bloquea si falla) ──
@@ -203,40 +211,60 @@
   }
 
   // ── Sheets ──
-  // Envía la reserva a Google Apps Script (doPost recibe e.postData.contents como JSON).
-  // Content-Type text/plain evita el preflight CORS que bloquea application/json.
-  // Si CORS bloquea la LECTURA de la respuesta, reintentamos con no-cors (el dato igual llega).
-  // Solo devuelve ok:false si hay un error real de red o si el script reporta conflicto.
+  // GitHub Pages bloquea siempre la LECTURA de la respuesta de Apps Script por CORS.
+  // Solución: no-cors como método principal (dato llega, no leemos respuesta).
+  // Fallback: form submit oculto via iframe si fetch falla completamente.
   async function enviarASheets(reg) {
     var payload = JSON.stringify(reg);
+
+    // Método 1: fetch no-cors (GitHub Pages compatible)
     try {
-      var res = await fetch(SHEETS_URL, {
+      await fetch(SHEETS_URL, {
         method:  'POST',
+        mode:    'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body:    payload
       });
-      var text = await res.text();
-      try {
-        return JSON.parse(text); // { ok: true/false, mensaje: '...' } desde Apps Script
-      } catch (_) {
-        return res.ok ? { ok: true } : { ok: false, mensaje: 'Respuesta inesperada del servidor.' };
-      }
+      return { ok: true };
     } catch (err) {
-      // CORS bloqueó la lectura de la respuesta → reintentamos con no-cors para asegurar entrega
-      try {
-        await fetch(SHEETS_URL, {
-          method:  'POST',
-          mode:    'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body:    payload
-        });
-        return { ok: true }; // dato enviado; conflictos ya validados en el cliente
-      } catch (err2) {
-        return {
-          ok: false,
-          mensaje: 'No se pudo conectar con Google Sheets.<br>Verifica tu conexión e intenta nuevamente.<br><small style="color:#718096;">' + err2.message + '</small>'
-        };
-      }
+      // Método 2: form submit oculto via iframe
+      return new Promise(function(resolve) {
+        try {
+          var iframeName = 'hidden-submit-' + Date.now();
+          var iframe = document.createElement('iframe');
+          iframe.name = iframeName;
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
+
+          var form = document.createElement('form');
+          form.method = 'POST';
+          form.action = SHEETS_URL;
+          form.target = iframeName;
+          form.style.display = 'none';
+
+          Object.keys(reg).forEach(function(k) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = k;
+            inp.value = reg[k];
+            form.appendChild(inp);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+
+          setTimeout(function() {
+            try { document.body.removeChild(form); } catch(e){}
+            try { document.body.removeChild(iframe); } catch(e){}
+            resolve({ ok: true });
+          }, 3000);
+        } catch (err2) {
+          resolve({
+            ok: false,
+            mensaje: 'No se pudo enviar la reserva. Verifica tu conexión e intenta nuevamente.<br><small style="color:#718096;">' + err2.message + '</small>'
+          });
+        }
+      });
     }
   }
 
@@ -377,7 +405,36 @@
     document.getElementById('fechas-ocupadas-note').style.display=tieneAlgo?'block':'none';
   }
 
-  function onFechaChange(input) { actualizarEstadoFecha(input.closest('.row-item'),document.getElementById('espacio').value); }
+  function onFechaChange(input) {
+    actualizarEstadoFecha(input.closest('.row-item'),document.getElementById('espacio').value);
+    filtrarHorasPasadas(input.closest('.row-item'), input.value);
+  }
+
+  // Deshabilita horas ya pasadas cuando el usuario selecciona el día de hoy
+  function filtrarHorasPasadas(fila, fecha) {
+    var ahora = new Date();
+    var horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+    var esHoy = (fecha === getTodayLocal());
+
+    ['.hor-hora', '.hor-hora-fin'].forEach(function(cls) {
+      var sel = fila.querySelector(cls);
+      if (!sel) return;
+      Array.from(sel.options).forEach(function(opt) {
+        if (!opt.value) return; // opción "--"
+        var parts = opt.value.split(':');
+        var minOpt = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        if (esHoy && minOpt <= horaActual) {
+          opt.disabled = true;
+          opt.style.color = '#a0aec0';
+          // Si estaba seleccionada una hora ya pasada, limpiarla
+          if (sel.value === opt.value) sel.value = '';
+        } else {
+          opt.disabled = false;
+          opt.style.color = '';
+        }
+      });
+    });
+  }
 
   function agregarHorario() {
     var lista=document.getElementById('horarios-lista');
@@ -400,6 +457,8 @@
       +'<select class="hor-hora-fin" style="border:1.5px solid #cbd5e0;border-radius:8px;padding:9px 8px;font-size:0.88rem;color:#2d3748;background:#f7fafc;font-family:inherit;cursor:pointer;"><option value="">--</option><option value="07:00">07:00</option><option value="07:15">07:15</option><option value="07:30">07:30</option><option value="07:45">07:45</option><option value="08:00">08:00</option><option value="08:15">08:15</option><option value="08:30">08:30</option><option value="08:45">08:45</option><option value="09:00">09:00</option><option value="09:15">09:15</option><option value="09:30">09:30</option><option value="09:45">09:45</option><option value="10:00">10:00</option><option value="10:15">10:15</option><option value="10:30">10:30</option><option value="10:45">10:45</option><option value="11:00">11:00</option><option value="11:15">11:15</option><option value="11:30">11:30</option><option value="11:45">11:45</option><option value="12:00">12:00</option><option value="12:15">12:15</option><option value="12:30">12:30</option><option value="12:45">12:45</option><option value="13:00">13:00</option><option value="13:15">13:15</option><option value="13:30">13:30</option><option value="13:45">13:45</option><option value="14:00">14:00</option><option value="14:15">14:15</option><option value="14:30">14:30</option><option value="14:45">14:45</option><option value="15:00">15:00</option><option value="15:15">15:15</option><option value="15:30">15:30</option><option value="15:45">15:45</option><option value="16:00">16:00</option><option value="16:15">16:15</option><option value="16:30">16:30</option><option value="16:45">16:45</option><option value="17:00">17:00</option><option value="17:15">17:15</option><option value="17:30">17:30</option><option value="17:45">17:45</option><option value="18:00">18:00</option><option value="18:15">18:15</option><option value="18:30">18:30</option><option value="18:45">18:45</option><option value="19:00">19:00</option><option value="19:15">19:15</option><option value="19:30">19:30</option><option value="19:45">19:45</option><option value="20:00">20:00</option><option value="20:15">20:15</option><option value="20:30">20:30</option><option value="20:45">20:45</option><option value="21:00">21:00</option><option value="21:15">21:15</option><option value="21:30">21:30</option><option value="21:45">21:45</option><option value="22:00">22:00</option><option value="22:15">22:15</option><option value="22:30">22:30</option><option value="22:45">22:45</option></select>'
       +'</div>'+removeBtn;
     lista.appendChild(div);
+    // Si la fecha ya viene con hoy (por defecto), filtrar horas pasadas
+    filtrarHorasPasadas(div, div.querySelector('.hor-fecha').value);
   }
 
   function onSedeChange() {
@@ -471,6 +530,7 @@
       var ti=filasHor[h].querySelector('.hor-hora').value;
       var tf=filasHor[h].querySelector('.hor-hora-fin').value;
       if(!f){ mostrarError('Completa la <b>fecha</b> en la Opción '+(h+1)+'.'); return; }
+      if(f < getTodayLocal()){ mostrarError('La <b>fecha</b> de la Opción '+(h+1)+' es en el pasado. Por favor selecciona una fecha válida.'); return; }
       if(!ti){ mostrarError('Completa la <b>hora de inicio</b> en la Opción '+(h+1)+'.'); return; }
       if(!tf){ mostrarError('Completa la <b>hora de fin</b> en la Opción '+(h+1)+'.'); return; }
       if(tf<=ti){ mostrarError('En la Opción '+(h+1)+', la <b>hora de fin</b> debe ser mayor a la de inicio.'); return; }
