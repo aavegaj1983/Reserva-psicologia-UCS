@@ -203,37 +203,39 @@
   }
 
   // ── Sheets ──
+  // Envía la reserva a Google Apps Script (doPost recibe e.postData.contents como JSON).
+  // Content-Type text/plain evita el preflight CORS que bloquea application/json.
+  // Si CORS bloquea la LECTURA de la respuesta, reintentamos con no-cors (el dato igual llega).
+  // Solo devuelve ok:false si hay un error real de red o si el script reporta conflicto.
   async function enviarASheets(reg) {
+    var payload = JSON.stringify(reg);
     try {
-      // Usamos GET con parámetros en la URL para evitar problemas de CORS con Google Apps Script.
-      // El script de Apps Script debe manejar doGet(e) además de doPost(e).
-      var params = new URLSearchParams();
-      Object.keys(reg).forEach(function(k){ params.append(k, reg[k]); });
-      params.append('timestamp', new Date().toISOString());
-
-      // Intento 1: POST con text/plain (evita preflight CORS)
       var res = await fetch(SHEETS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(reg)
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body:    payload
       });
-      // Google Apps Script con no-cors devuelve respuesta opaca; si llega aquí sin error, fue exitoso
-      if (res.ok || res.type === 'opaque') return { ok: true };
-      var data = await res.json().catch(function(){ return { ok: true }; });
-      return data;
-    } catch(e) {
-      // Intento 2: Fallback con no-cors (no podemos leer la respuesta, pero el dato llega)
+      var text = await res.text();
+      try {
+        return JSON.parse(text); // { ok: true/false, mensaje: '...' } desde Apps Script
+      } catch (_) {
+        return res.ok ? { ok: true } : { ok: false, mensaje: 'Respuesta inesperada del servidor.' };
+      }
+    } catch (err) {
+      // CORS bloqueó la lectura de la respuesta → reintentamos con no-cors para asegurar entrega
       try {
         await fetch(SHEETS_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(reg)
+          method:  'POST',
+          mode:    'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body:    payload
         });
-        return { ok: true };
-      } catch(e2) {
-        // Si ambos fallan, notificamos al usuario
-        return { ok: false, mensaje: 'No se pudo conectar con Google Sheets. Verifica tu conexión e intenta nuevamente.' };
+        return { ok: true }; // dato enviado; conflictos ya validados en el cliente
+      } catch (err2) {
+        return {
+          ok: false,
+          mensaje: 'No se pudo conectar con Google Sheets.<br>Verifica tu conexión e intenta nuevamente.<br><small style="color:#718096;">' + err2.message + '</small>'
+        };
       }
     }
   }
