@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Reservas – Facultad de Psicología</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #2d3748; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #4a5568, #2b6cb0); color: white; padding: 24px 32px; display: flex; align-items: center; gap: 16px; position: relative; }
+  .btn-admin-gear { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 38px; height: 38px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+  .btn-admin-gear:hover { background: rgba(255,255,255,0.3); }
+  header .icon { font-size: 2.2rem; }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
+  .tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e8f0; }
+  .tab { padding: 14px 28px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #718096; border-bottom: 3px solid transparent; transition: all .2s; }
+  .tab.active { color: #2b6cb0; border-bottom-color: #2b6cb0; }
+  .tab:hover:not(.active) { color: #4a5568; background: #f7fafc; }
+  .section { display: none; padding: 32px; max-width: 760px; margin: 0 auto; }
+  .section.active { display: block; }
+  .card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 24px; }
+  .card h2 { font-size: 1.1rem; color: #2b6cb0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 0.82rem; font-weight: 600; color: #4a5568; }
+  label span.req { color: #e53e3e; }
+  input, select, textarea { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 9px 12px; font-size: 0.92rem; color: #2d3748; transition: border .2s; background: #f7fafc; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #2b6cb0; background: #fff; }
+  input.field-error { border-color: #e53e3e !important; background: #fff5f5 !important; }
+  textarea { resize: vertical; min-height: 80px; }
+  .btn-submit { width: 100%; padding: 13px; background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s; margin-top: 8px; }
+  .btn-submit:hover { opacity: .9; }
+  .btn-add { padding: 7px 16px; background: #2b6cb0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-top: 10px; }
+  .btn-remove { background: #fed7d7; color: #9b2c2c; border: none; border-radius: 8px; padding: 9px 12px; cursor: pointer; font-weight: 700; font-size: 1rem; }
+  .row-item { display: grid; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .row-horario { grid-template-columns: 80px 1fr 1fr 1fr auto; align-items: center; }
+  .row-externo { grid-template-columns: 1fr 1fr auto; }
+  .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: white; border-radius: 20px; padding: 44px 40px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: popIn .3s ease; }
+  @keyframes popIn { from { transform:scale(.8); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal-icon { font-size: 3.8rem; margin-bottom: 14px; }
+  .modal-box h2 { font-size: 1.3rem; margin-bottom: 10px; }
+  .modal-box p { font-size: 0.93rem; color: #4a5568; margin-bottom: 26px; line-height: 1.6; }
+  .modal-btn { padding: 11px 36px; border: none; border-radius: 10px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+  .modal-btn.success { background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; }
+  .modal-btn.error { background: #e53e3e; color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="icon">🏛️</div>
+  <div>
+    <h1>Facultad de Psicología y Educación – Universidad Científica del Sur</h1>
+    <p>Reserva de espacios Sala Gesell / Testoteca</p>
+  </div>
+  <button class="btn-admin-gear" id="btn-gear" title="Administrador">⚙️</button>
+</header>
+
+<div class="tabs" id="tabs-bar">
+  <div class="tab active" onclick="switchTab('form')">📋 Formulario de Reserva</div>
+</div>
+
+<div class="section active" id="tab-form">
+  <div class="card">
+    <h2>👤 Datos personales</h2>
+    <div class="grid-2">
+      <div class="field"><label>Nombre completo <span class="req">*</span></label><input type="text" id="nombre" placeholder="Ej. Ana García López"/></div>
+      <div class="field"><label>Correo electrónico <span class="req">*</span></label><input type="email" id="correo" placeholder="nombre@cientifica.edu.pe"/></div>
+      <div class="field"><label>Teléfono <span class="req">*</span></label><input type="tel" id="telefono" placeholder="9XXXXXXXX (9 dígitos)"/></div>
+      <div class="field">
+        <label>Sede <span class="req">*</span></label>
+        <select id="sede" onchange="onSedeChange()">
+          <option value="">-- Seleccionar --</option>
+          <option>Sede Ate</option><option>Sede Norte</option><option>Sede Villa</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo de usuario <span class="req">*</span></label>
+        <select id="tipo"><option value="">-- Seleccionar --</option><option>Estudiante</option><option>Docente</ente></select>
+      </div>
+      <div class="field">
+        <label>Modalidad de estudios <span class="req">*</span></label>
+        <select id="modalidad"><option value="">-- Seleccionar --</option><option>Pregrado Regular</option><option>Pregrado CPE</option></select>
+      </div>
+      <div class="field full"><label>Curso <span class="req">*</span></label><input type="text" id="curso" placeholder="Ej. Psicología Clínica II"/></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏠 Datos de la reserva</h2>
+    <div class="grid-2">
+      <div class="field">
+        <label>Espacio a reservar <span class="req">*</span></label>
+        <select id="espacio" onchange="actualizarFechasBloqueadas()">
+          <option value="">-- Seleccionar --</option><option>Sala Gesell</option><option>Testoteca</option><option>Consultorios de simulación</option>
+        </select>
+      </div>
+      <div class="field"><label>Número de personas <span class="req">*</span></label><input type="number" id="personas" min="1" max="50" placeholder="Ej. 5"/></div>
+      <div class="field full">
+        <label>Opciones de horario <span class="req">*</span><br><small style="font-weight:400;color:#718096;">Agrega una o más alternativas en orden de preferencia</small></label>
+        <div id="horarios-lista"></div>
+        <div id="fechas-ocupadas-note" style="display:none;font-size:0.78rem;color:#dd6b20;margin-top:4px;">⚠ Esta fecha tiene reservas. Verifica que tu horario no se solape al enviar.</div>
+        <button type="button" class="btn-add" onclick="agregarHorario()">+ Agregar horario alternativo</button>
+      </div>
+      <div class="field full"><label>Motivo de uso <span class="req">*</span></label><textarea id="motivo" placeholder="Describa brevemente el propósito de la reserva..."></textarea></div>
+      <div class="field full">
+        <label>¿Requiere acceso de personas fuera del campus?</label>
+        <select id="externos-toggle" onchange="toggleExternos()"><option value="no">No</option><option value="si">Sí</option></select>
+      </div>
+      <div class="field full" id="externos-box" style="display:none;">
+        <label>Personas externas <span class="req">*</span></label>
+        <div id="externos-lista"></div>
+        <button type="button" class="btn-add" onclick="agregarExterno()">+ Agregar persona</button>
+      </div>
+    </div>
+  </div>
+  <button class="btn-submit" onclick="submitForm()">✅ Enviar Reserva</button>
+</div>
+
+<!-- MODAL ERROR -->
+<div class="modal-overlay" id="modal-error">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <h2 style="color:#c53030;">Error en el formulario</h2>
+    <p id="modal-error-msg"></p>
+    <button class="modal-btn error" onclick="cerrarModal('modal-error')">Entendido</button>
+  </div>
+</div>
+
+<!-- MODAL ÉXITO -->
+<div class="modal-overlay" id="modal-exito">
+  <div class="modal-box">
+    <div class="modal-icon">✅</div>
+    <h2 style="color:#276749;">¡Reserva registrada!</h2>
+    <p>Tu solicitud fue enviada exitosamente.<br>Nos pondremos en contacto contigo para confirmar la disponibilidad del espacio.</p>
+    <button class="modal-btn success" onclick="cerrarModal('modal-exito')">Aceptar</button>
+  </div>
+</div>
+
+<!-- MODAL ADMIN LOGIN -->
+<div class="modal-overlay" id="modal-admin-login">
+  <div class="modal-box">
+    <!-- PASO 1: ingresar contraseña -->
+    <div id="admin-step-login">
+      <div class="modal-icon">🔐</div>
+      <h2 style="color:#2b6cb0;">Panel de Administración</h2>
+      <p style="margin-bottom:14px;">Ingresa la contraseña para continuar.</p>
+      <input type="password" id="admin-pw-input" placeholder="Contraseña" style="width:100%;margin-bottom:16px;text-align:center;"/>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="modal-btn" style="background:#e2e8f0;color:#4a5568;" onclick="cerrarModal('modal-admin-login')">Cancelar</button>
+        <button class="modal-btn success" onclick="validarAdmin()">Entrar</button>
+      </div>
+      <p id="admin-pw-error" style="color:#e53e3e;font-size:0.82rem;margin-top:10px;display:none;">Contraseña incorrecta.</p>
+    </div>
+    <!-- PASO 2: acceso concedido, mostrar URL copiable -->
+    <div id="admin-step-access" style="display:none;">
+      <div class="modal-icon">✅</div>
+      <h2 style="color:#276749;">Acceso concedido</h2>
+      <p style="margin-bottom:12px;">Copia el enlace y pégalo en una nueva pestaña de tu navegador.</p>
+      <div style="display:flex;align-items:center;gap:8px;background:#f0f4f8;border:1.5px solid #cbd5e0;border-radius:8px;padding:10px 12px;margin-bottom:16px;">
+        <span id="admin-url-text" style="font-size:0.75rem;color:#2d3748;word-break:break-all;flex:1;text-align:left;"></span>
+        <button onclick="copiarLink()" id="btn-copiar"
+          style="flex-shrink:0;padding:6px 14px;background:#2b6cb0;color:white;border:none;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer;">
+          📋 Copiar
+        </button>
+      </div>
+      <p id="copied-msg" style="color:#276749;font-size:0.88rem;font-weight:700;margin-bottom:12px;display:none;background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:8px;padding:8px 12px;">✅ ¡Enlace copiado! Ahora pégalo en una nueva pestaña (Ctrl+V).</p>
+      <button class="modal-btn" style="background:#e2e8f0;color:#4a5568;" onclick="cerrarAdminAccess()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyoPbqMKpuiolrzWv5cXU4SMokSMJU2sIcSVHTheG4RZXIbX_EbRqShE-YR4RPH2Qs7/exec';
+  var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
+  var ADMIN_PASS  = 'psicocientifica2026';
+  var today       = new Date().toISOString().split('T')[0];
+  var reservas    = [];
+
+  // ── Storage (no bloquea si falla) ──
+  async function cargarReservas() {
+    try {
+      if (window.storage) {
+        var r = await window.storage.get('psico_reservas_v1', true);
+        if (r && r.value) reservas = JSON.parse(r.value);
+      }
+    } catch(e) {}
+    try {
+      var local = localStorage.getItem('psico_reservas_v1');
+      if (local && !reservas.length) reservas = JSON.parse(local);
+    } catch(e) {}
+  }
+
+  async function guardarReservas() {
+    var data = JSON.stringify(reservas);
+    try { if (window.storage) await window.storage.set('psico_reservas_v1', data, true); } catch(e) {}
+    try { localStorage.setItem('psico_reservas_v1', data); } catch(e) {}
+  }
+
+  // ── Sheets ──
+  async function enviarASheets(reg) {
+    try {
+      var res = await fetch(SHEETS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg) });
+      return await res.json();
+    } catch(e) { return { ok: true, mensaje: '' }; }
+  }
+
+  // ── Modales ──
+  function mostrarError(msg) {
+    document.getElementById('modal-error-msg').innerHTML = msg;
+    document.getElementById('modal-error').classList.add('show');
+  }
+  function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  // ── Admin ──
+  function validarAdmin() {
+    var inp = document.getElementById('admin-pw-input');
+    var err = document.getElementById('admin-pw-error');
+    if (inp.value === ADMIN_PASS) {
+      inp.value = '';
+      err.style.display = 'none';
+      document.getElementById('admin-step-login').style.display = 'none';
+      document.getElementById('admin-url-text').textContent = SHEETS_LINK;
+      document.getElementById('copied-msg').style.display = 'none';
+      document.getElementById('admin-step-access').style.display = 'block';
+    } else {
+      err.style.display = 'block';
+      inp.focus();
+    }
+  }
+
+  function copiarLink() {
+    var btn = document.getElementById('btn-copiar');
+    var msg = document.getElementById('copied-msg');
+
+    // Intentar clipboard API moderna
+    function exito() {
+      msg.style.display = 'block';
+      btn.textContent = '✓ Copiado';
+      btn.style.background = '#276749';
+      setTimeout(function() {
+        btn.textContent = 'Copiar';
+        btn.style.background = '#2b6cb0';
+        msg.style.display = 'none';
+      }, 3000);
+    }
+
+    // Fallback: crear input temporal y execCommand
+    function fallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = SHEETS_LINK;
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '0';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        var ok = document.execCommand('copy');
+        if (ok) exito();
+      } catch(e) {}
+      document.body.removeChild(ta);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(SHEETS_LINK).then(exito).catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function cerrarAdminAccess() {
+    cerrarModal('modal-admin-login');
+    setTimeout(function() {
+      document.getElementById('admin-step-login').style.display = 'block';
+      document.getElementById('admin-step-access').style.display = 'none';
+    }, 300);
+  }
+
+  // ── Validaciones ──
+  var reCorreo   = /^[^\s@]+@cientifica\.edu\.pe$/;
+  var reTelefono = /^9\d{8}$/;
+  var reDNI      = /^\d{8}$/;
+
+  function limpiarErrores() { document.querySelectorAll('.field-error').forEach(function(el){ el.classList.remove('field-error'); }); }
+  function marcarError(id) { var el=document.getElementById(id); if(el) el.classList.add('field-error'); }
+
+  // ── Tiempo ──
+  function timeToMin(t) { var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+  function minToTime(m) { var h=Math.floor(m/60),mn=m%60; return (h<10?'0':'')+h+':'+(mn<10?'0':'')+mn; }
+
+  function getHorariosOcupados(sede,espacio,fecha) {
+    var oc=[];
+    reservas.forEach(function(r){
+      if(r.espacio===espacio&&r.sede===sede){
+        r.horarios.split('|').forEach(function(h){
+          var p=h.trim().split(' ');
+          if(p[0]===fecha&&p[1]&&p[3]) oc.push({inicio:p[1],fin:p[3]});
+        });
+      }
+    });
+    return oc;
+  }
+
+  function hayConflicto(oc,ini,fin) { return oc.some(function(o){ return ini<o.fin&&fin>o.inicio; }); }
+
+  function hayConflictoMin(oc,s,e) { return oc.some(function(o){ return s<timeToMin(o.fin)&&e>timeToMin(o.inicio); }); }
+
+  function sugerirHorario(oc,ini,fin) {
+    var dur=timeToMin(fin)-timeToMin(ini);
+    var sorted=oc.slice().sort(function(a,b){ return timeToMin(a.inicio)-timeToMin(b.inicio); });
+    var cands=[];
+    if(sorted.length){ var es=timeToMin(sorted[0].inicio),ss=es-dur; if(ss>=7*60&&!hayConflictoMin(sorted,ss,es)) cands.push({inicio:minToTime(ss),fin:minToTime(es)}); }
+    sorted.forEach(function(o){ var ss=timeToMin(o.fin),es=ss+dur; if(es<=22*60&&!hayConflictoMin(sorted,ss,es)) cands.push({inicio:minToTime(ss),fin:minToTime(es)}); });
+    if(!sorted.length||!cands.length) return null;
+    var orig=timeToMin(ini);
+    cands.sort(function(a,b){ return Math.abs(timeToMin(a.inicio)-orig)-Math.abs(timeToMin(b.inicio)-orig); });
+    return cands[0];
+  }
+
+  function getFechasConReserva(sede,espacio) {
+    var b={};
+    reservas.forEach(function(r){ if(r.espacio===espacio&&r.sede===sede){ r.horarios.split('|').forEach(function(h){ var f=h.trim().split(' ')[0]; if(f) b[f]=true; }); } });
+    return Object.keys(b);
+  }
+
+  function actualizarFechasBloqueadas() {
+    var espacio=document.getElementById('espacio').value;
+    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){ actualizarEstadoFecha(fila,espacio); });
+  }
+
+  function actualizarEstadoFecha(fila,espacio) {
+    if(!espacio) return;
+    var sede=document.getElementById('sede').value;
+    var input=fila.querySelector('.hor-fecha');
+    var nota=fila.querySelector('.fecha-nota');
+    var tieneAlgo=getFechasConReserva(sede,espacio).indexOf(input.value)!==-1;
+    input.style.borderColor=tieneAlgo?'#dd6b20':'#cbd5e0';
+    input.style.background=tieneAlgo?'#fffaf0':'#f7fafc';
+    if(nota) nota.style.display=tieneAlgo?'block':'none';
+    document.getElementById('fechas-ocupadas-note').style.display=tieneAlgo?'block':'none';
+  }
+
+  function onFechaChange(input) { actualizarEstadoFecha(input.closest('.row-item'),document.getElementById('espacio').value); }
+
+  function agregarHorario() {
+    var lista=document.getElementById('horarios-lista');
+    var idx=lista.children.length+1;
+    var div=document.createElement('div');
+    div.className='row-item row-horario';
+    var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'horarios-lista\',\'Opción\')">✕</button>':'<span></span>';
+    div.innerHTML='<span class="row-label">Opción '+idx+'</span>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +'<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
+      +'<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
+      +'<span class="fecha-nota" style="font-size:0.75rem;color:#dd6b20;display:none;">⚠ Esta fecha tiene reservas</span>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +'<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
+      +'<input type="time" class="hor-hora"/>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +'<label style="font-size:0.75rem;color:#718096;">Fin</label>'
+      +'<input type="time" class="hor-hora-fin"/>'
+      +'</div>'+removeBtn;
+    lista.appendChild(div);
+  }
+
+  function onSedeChange() {
+    var sede=document.getElementById('sede').value;
+    var sel=document.getElementById('espacio');
+    var actual=sel.value;
+    sel.innerHTML='<option value="">-- Seleccionar --</option>';
+    if(sede==='Sede Villa') sel.innerHTML+='<option>Consultorios de simulación</option>';
+    else sel.innerHTML+='<option>Sala Gesell</option><option>Testoteca</option>';
+    var opts=Array.from(sel.options).map(function(o){ return o.value; });
+    sel.value=opts.indexOf(actual)!==-1?actual:'';
+    actualizarFechasBloqueadas();
+  }
+
+  function toggleExternos() {
+    var show=document.getElementById('externos-toggle').value==='si';
+    document.getElementById('externos-box').style.display=show?'block':'none';
+    if(show&&document.getElementById('externos-lista').children.length===0) agregarExterno();
+  }
+
+  function agregarExterno() {
+    var div=document.createElement('div');
+    div.className='row-item row-externo';
+    div.innerHTML='<input type="text" placeholder="Nombre completo" class="ext-nombre"/>'
+      +'<input type="text" placeholder="DNI (8 dígitos)" maxlength="8" class="ext-dni"/>'
+      +'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'externos-lista\',null)">✕</button>';
+    document.getElementById('externos-lista').appendChild(div);
+  }
+
+  function eliminarFila(btn,listaId,labelPrefix) {
+    btn.parentElement.remove();
+    if(labelPrefix) document.querySelectorAll('#'+listaId+' > div').forEach(function(d,i){ var l=d.querySelector('.row-label'); if(l) l.textContent=labelPrefix+' '+(i+1); });
+  }
+
+  function switchTab(t) {
+    document.querySelectorAll('.tab').forEach(function(el){ el.classList.remove('active'); });
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('tab-form').classList.add('active');
+  }
+
+  function getVal(id) { return document.getElementById(id).value.trim(); }
+
+  async function submitForm() {
+    limpiarErrores();
+    var nombre=getVal('nombre'),correo=getVal('correo'),telefono=getVal('telefono');
+    var sede=getVal('sede'),tipo=getVal('tipo'),modalidad=getVal('modalidad');
+    var curso=getVal('curso'),espacio=getVal('espacio'),personas=getVal('personas'),motivo=getVal('motivo');
+
+    if(!nombre){ marcarError('nombre'); mostrarError('El campo <b>Nombre completo</b> es obligatorio.'); return; }
+    if(!correo){ marcarError('correo'); mostrarError('El campo <b>Correo electrónico</b> es obligatorio.'); return; }
+    if(!reCorreo.test(correo)){ marcarError('correo'); mostrarError('El <b>correo</b> debe ser institucional.<br><small>Formato: nombre@cientifica.edu.pe</small>'); return; }
+    if(!telefono){ marcarError('telefono'); mostrarError('El campo <b>Teléfono</b> es obligatorio.'); return; }
+    if(!reTelefono.test(telefono)){ marcarError('telefono'); mostrarError('El <b>teléfono</b> debe tener 9 dígitos y comenzar con 9.'); return; }
+    if(!sede){ marcarError('sede'); mostrarError('El campo <b>Sede</b> es obligatorio.'); return; }
+    if(!tipo){ marcarError('tipo'); mostrarError('Selecciona el <b>Tipo de usuario</b>.'); return; }
+    if(!modalidad){ marcarError('modalidad'); mostrarError('Selecciona la <b>Modalidad de estudios</b>.'); return; }
+    if(!curso){ marcarError('curso'); mostrarError('El campo <b>Curso</b> es obligatorio.'); return; }
+    if(!espacio){ marcarError('espacio'); mostrarError('Selecciona el <b>Espacio a reservar</b>.'); return; }
+    if(!personas||parseInt(personas)<1){ marcarError('personas'); mostrarError('El <b>Número de personas</b> debe ser al menos 1.'); return; }
+
+    var filasHor=document.querySelectorAll('#horarios-lista > div');
+    if(!filasHor.length){ mostrarError('Agrega al menos una <b>opción de horario</b>.'); return; }
+    var horarios=[];
+    for(var h=0;h<filasHor.length;h++){
+      var f=filasHor[h].querySelector('.hor-fecha').value;
+      var ti=filasHor[h].querySelector('.hor-hora').value;
+      var tf=filasHor[h].querySelector('.hor-hora-fin').value;
+      if(!f){ mostrarError('Completa la <b>fecha</b> en la Opción '+(h+1)+'.'); return; }
+      if(!ti){ mostrarError('Completa la <b>hora de inicio</b> en la Opción '+(h+1)+'.'); return; }
+      if(!tf){ mostrarError('Completa la <b>hora de fin</b> en la Opción '+(h+1)+'.'); return; }
+      if(tf<=ti){ mostrarError('En la Opción '+(h+1)+', la <b>hora de fin</b> debe ser mayor a la de inicio.'); return; }
+      var oc=getHorariosOcupados(sede,espacio,f);
+      if(hayConflicto(oc,ti,tf)){
+        var sug=sugerirHorario(oc,ti,tf);
+        var msg='El horario <b>'+ti+' – '+tf+'</b> en la Opción '+(h+1)+' ya está reservado.';
+        if(sug) msg+='<br><br>💡 <b>Horario sugerido:</b> '+sug.inicio+' – '+sug.fin;
+        else msg+='<br><br>No hay horarios disponibles ese día. Por favor elige otro.';
+        mostrarError(msg); return;
+      }
+      horarios.push(f+' '+ti+' - '+tf);
+    }
+
+    if(!motivo){ marcarError('motivo'); mostrarError('El campo <b>Motivo de uso</b> es obligatorio.'); return; }
+
+    var tieneExternos=document.getElementById('externos-toggle').value==='si';
+    var externosStr='—';
+    if(tieneExternos){
+      var filasExt=document.querySelectorAll('#externos-lista > div');
+      if(!filasExt.length){ mostrarError('Agrega al menos una <b>persona externa</b>.'); return; }
+      var pext=[];
+      for(var ex=0;ex<filasExt.length;ex++){
+        var nom=filasExt[ex].querySelector('.ext-nombre').value.trim();
+        var dni=filasExt[ex].querySelector('.ext-dni').value.trim();
+        if(!nom){ filasExt[ex].querySelector('.ext-nombre').classList.add('field-error'); mostrarError('Completa el <b>nombre</b> de la persona externa '+(ex+1)+'.'); return; }
+        if(!dni){ filasExt[ex].querySelector('.ext-dni').classList.add('field-error'); mostrarError('Completa el <b>DNI</b> de la persona externa '+(ex+1)+'.'); return; }
+        if(!reDNI.test(dni)){ filasExt[ex].querySelector('.ext-dni').classList.add('field-error'); mostrarError('El DNI de <b>'+nom+'</b> debe tener 8 dígitos.'); return; }
+        pext.push(nom+' ('+dni+')');
+      }
+      externosStr=pext.join(' | ');
+    }
+
+    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr };
+
+    var resultado=await enviarASheets(reg);
+    if(resultado&&resultado.ok===false){
+      mostrarError(resultado.mensaje||'El horario ya está reservado. Por favor elige otra opción.');
+      return;
+    }
+
+    reservas.push(reg);
+    await guardarReservas();
+
+    ['nombre','correo','telefono','sede','tipo','modalidad','curso','espacio','personas','motivo'].forEach(function(f){ document.getElementById(f).value=''; });
+    document.getElementById('horarios-lista').innerHTML='';
+    document.getElementById('externos-toggle').value='no';
+    document.getElementById('externos-lista').innerHTML='';
+    document.getElementById('externos-box').style.display='none';
+    document.getElementById('fechas-ocupadas-note').style.display='none';
+    agregarHorario();
+    document.getElementById('modal-exito').classList.add('show');
+  }
+
+  // ── Inicialización (todo dentro de DOMContentLoaded) ──
+  document.addEventListener('DOMContentLoaded', function() {
+    // Tuerca → modal de contraseña
+    document.getElementById('btn-gear').addEventListener('click', function() {
+      document.getElementById('admin-pw-input').value = '';
+      document.getElementById('admin-pw-error').style.display = 'none';
+      document.getElementById('modal-admin-login').classList.add('show');
+      setTimeout(function(){ document.getElementById('admin-pw-input').focus(); }, 150);
+    });
+
+    // Enter en el campo de contraseña
+    document.getElementById('admin-pw-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') validarAdmin();
+    });
+
+    agregarHorario();
+    cargarReservas();
+  });
+</script>
+</body>
+</html>
