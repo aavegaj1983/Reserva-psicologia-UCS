@@ -104,7 +104,6 @@
       <div class="field full">
         <label>Opciones de horario <span class="req">*</span><br><small style="font-weight:400;color:#718096;">Agrega una o más alternativas en orden de preferencia</small></label>
         <div id="horarios-lista"></div>
-        <div id="fechas-ocupadas-note" style="display:none;font-size:0.78rem;color:#dd6b20;margin-top:4px;">⚠ Esta fecha tiene reservas. Verifica que tu horario no se solape al enviar.</div>
         <button type="button" class="btn-add" onclick="agregarHorario()">+ Agregar horario alternativo</button>
       </div>
       <div class="field full"><label>Motivo de uso <span class="req">*</span></label><textarea id="motivo" placeholder="Describa brevemente el propósito de la reserva..."></textarea></div>
@@ -176,7 +175,7 @@
 </div>
 
 <script>
-  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz70sYgAc-IUE2ugz3b-bxbX6LC-L3tqAXfJ4gwg7vQuTB1ZaQoepkJvIdaZZAjmIV9FQ/exec';
+  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz7x9nSfpEXOKJ2Iw2Ae8cdVzLNAIDll96gKLZrQyzbldP3wLVYccznI3FJvq7Wlpdung/exec';
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
   // Fecha de hoy en hora local (evita desfase UTC-5 de Perú)
@@ -189,6 +188,88 @@
   }
   var today = getTodayLocal();
   var reservas    = [];
+
+  // Responsables por sede > dia semana (1=Lun..5=Vie) > turno M(manana) / T(tarde)
+  // M: 07:00-14:00  |  T: 14:00-22:00
+  var RESPONSABLES = {
+    'Sede Ate': {
+      1: { T: ['Alan'] },
+      2: { M: ['Enver'], T: ['Alan'] },
+      3: { M: ['Armando'], T: ['Alan'] },
+      5: { M: ['Armando'] }
+    },
+    'Sede Norte': {
+      1: { M: ['Maritza', 'Gladys'], T: ['John'] },
+      3: { M: ['Jenny'], T: ['John'] },
+      4: { M: ['Jenny', 'Gladys'] },
+      5: { M: ['Maritza', 'Jenny'], T: ['John'] }
+    },
+    'Sede Villa': {
+      1: { M: ['Paul'], T: ['Maite', 'Francis'] },
+      2: { M: ['Paul', 'Keiko'], T: ['Francis'] },
+      3: { M: ['Paul'], T: ['Verónica', 'Maité', 'Miluska'] },
+      4: { M: ['Enver', 'Keiko'], T: ['Verónica', 'Maite'] },
+      5: { T: ['Miluska'] }
+    }
+  };
+
+  // Devuelve turnos disponibles {M:[...], T:[...]} para sede+fecha
+  function getTurnosDisponibles(sede, fecha) {
+    if (!sede || !fecha) return {};
+    var d = new Date(fecha + 'T12:00:00');
+    var dow = d.getDay(); // 0=Dom,1=Lun..5=Vie,6=Sab
+    var sedeData = RESPONSABLES[sede];
+    if (!sedeData) return {};
+    return sedeData[dow] || {};
+  }
+
+  // Habilita/deshabilita opciones de hora segun turno disponible
+  function actualizarHorasDisponibles(fila, sede, fecha) {
+    var turnos = getTurnosDisponibles(sede, fecha);
+    var haM = !!turnos.M;
+    var haT = !!turnos.T;
+    var sinAtencion = !haM && !haT && !!fecha;
+
+    ['.hor-hora', '.hor-hora-fin'].forEach(function(cls) {
+      var sel = fila.querySelector(cls);
+      if (!sel) return;
+      Array.from(sel.options).forEach(function(opt) {
+        if (!opt.value) return;
+        var min = timeToMin(opt.value);
+        var enM = min >= 7*60 && min <= 14*60;
+        var enT = min >= 14*60 && min <= 22*60;
+        var habilitada = (haM && enM) || (haT && enT);
+        opt.disabled = !habilitada;
+        opt.style.color = habilitada ? '' : '#ccc';
+      });
+      if (sel.value && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].disabled) {
+        sel.value = '';
+      }
+    });
+
+    // Mensaje si el dia no tiene atencion
+    var nota = fila.querySelector('.fecha-nota');
+    if (nota) {
+      if (sinAtencion) {
+        nota.textContent = '✖ Sin atención este día';
+        nota.style.color = '#e53e3e';
+        nota.style.display = 'block';
+      } else {
+        nota.style.display = 'none';
+      }
+    }
+  }
+
+  // Calcula responsable(s) segun sede + fecha + hora de inicio
+  function calcularResponsable(sede, fecha, horaInicio) {
+    if (!sede || !fecha || !horaInicio) return '';
+    var turnos = getTurnosDisponibles(sede, fecha);
+    var min = timeToMin(horaInicio);
+    var turno = min < 14*60 ? 'M' : 'T';
+    var lista = turnos[turno];
+    if (!lista || !lista.length) return '';
+    return lista.join(', ');
+  }
 
   // ── Storage (no bloquea si falla) ──
   async function cargarReservas() {
@@ -388,20 +469,17 @@
   }
 
   function actualizarEstadoFecha(fila,espacio) {
-    if(!espacio) return;
-    var sede=document.getElementById('sede').value;
-    var input=fila.querySelector('.hor-fecha');
-    var nota=fila.querySelector('.fecha-nota');
-    var tieneAlgo=getFechasConReserva(sede,espacio).indexOf(input.value)!==-1;
-    input.style.borderColor=tieneAlgo?'#dd6b20':'#cbd5e0';
-    input.style.background=tieneAlgo?'#fffaf0':'#f7fafc';
-    if(nota) nota.style.display=tieneAlgo?'block':'none';
-    document.getElementById('fechas-ocupadas-note').style.display=tieneAlgo?'block':'none';
+    // Indicador visual eliminado para no alarmar al usuario.
+    // La deteccion de conflicto real ocurre al enviar.
   }
 
   function onFechaChange(input) {
-    actualizarEstadoFecha(input.closest('.row-item'),document.getElementById('espacio').value);
-    filtrarHorasPasadas(input.closest('.row-item'), input.value);
+    var fila = input.closest('.row-item');
+    var sede = document.getElementById('sede').value;
+    var fecha = input.value;
+    actualizarEstadoFecha(fila, document.getElementById('espacio').value);
+    filtrarHorasPasadas(fila, fecha);
+    actualizarHorasDisponibles(fila, sede, fecha);
   }
 
   // Deshabilita horas ya pasadas cuando el usuario selecciona el día de hoy
@@ -440,7 +518,7 @@
       +'<div style="display:flex;flex-direction:column;gap:3px;">'
       +'<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
       +'<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
-      +'<span class="fecha-nota" style="font-size:0.75rem;color:#dd6b20;display:none;">⚠ Esta fecha tiene reservas</span>'
+      +'<span class="fecha-nota" style="display:none;"></span>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:3px;">'
       +'<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
@@ -465,6 +543,11 @@
     var opts=Array.from(sel.options).map(function(o){ return o.value; });
     sel.value=opts.indexOf(actual)!==-1?actual:'';
     actualizarFechasBloqueadas();
+    // Actualizar horas disponibles en filas existentes
+    document.querySelectorAll('#horarios-lista > div').forEach(function(fila) {
+      var fecha = fila.querySelector('.hor-fecha') ? fila.querySelector('.hor-fecha').value : '';
+      actualizarHorasDisponibles(fila, sede, fecha);
+    });
   }
 
   function toggleExternos() {
@@ -539,6 +622,23 @@
       horarios.push(f+' '+ti+' - '+tf);
     }
 
+    // Validar que todos los horarios tengan responsable
+    for(var hv=0;hv<horarios.length;hv++){
+      var hparts=horarios[hv].split(' ');
+      var hfecha=hparts[0], hinicio=hparts[1];
+      if(!calcularResponsable(sede,hfecha,hinicio)){
+        mostrarError('La Opción '+(hv+1)+' no tiene personal disponible para ese día y horario.<br><small>Por favor elige un día y turno con atención disponible.</small>');
+        return;
+      }
+    }
+
+    // Calcular responsable(s) para cada opcion
+    var responsableStr = horarios.map(function(h, idx) {
+      var hparts = h.split(' ');
+      var resp = calcularResponsable(sede, hparts[0], hparts[1]);
+      return 'Op.'+(idx+1)+': '+(resp||'—');
+    }).join(' | ');
+
     if(!motivo){ marcarError('motivo'); mostrarError('El campo <b>Motivo de uso</b> es obligatorio.'); return; }
 
     var tieneExternos=document.getElementById('externos-toggle').value==='si';
@@ -558,7 +658,7 @@
       externosStr=pext.join(' | ');
     }
 
-    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr };
+    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr,responsable:responsableStr };
 
     // Mostrar estado de carga
     btnSubmit.disabled = true;
@@ -586,7 +686,6 @@
     document.getElementById('externos-toggle').value='no';
     document.getElementById('externos-lista').innerHTML='';
     document.getElementById('externos-box').style.display='none';
-    document.getElementById('fechas-ocupadas-note').style.display='none';
     agregarHorario();
     document.getElementById('modal-exito').classList.add('show');
   }
