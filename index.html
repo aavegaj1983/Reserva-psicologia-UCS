@@ -211,22 +211,14 @@
   }
 
   // ── Sheets ──
-  // Método principal: GET con parámetros en URL (Apps Script doGet → e.parameter).
-  // Fallback 1: POST form-urlencoded (Apps Script doPost → e.parameter).
-  // Fallback 2: form submit via iframe (dispara y olvida).
+  // POST form-urlencoded como metodo principal (el GET pierde params en el redirect de Google).
+  // Fallback: form submit POST via iframe oculto (fire-and-forget).
   async function enviarASheets(reg) {
     var params = Object.keys(reg).map(function(k) {
-      return encodeURIComponent(k) + '=' + encodeURIComponent(reg[k]);
+      return encodeURIComponent(k) + '=' + encodeURIComponent(String(reg[k]));
     }).join('&');
-    var payload = JSON.stringify(reg);
 
-    // Método 1: GET con parámetros en URL (más confiable con Apps Script doGet)
-    try {
-      await fetch(SHEETS_URL + '?' + params, { method: 'GET', mode: 'no-cors' });
-      return { ok: true };
-    } catch(e1) { /* continúa */ }
-
-    // Método 2: POST form-urlencoded (Apps Script doPost → e.parameter)
+    // Metodo 1: fetch POST + form-urlencoded
     try {
       await fetch(SHEETS_URL, {
         method:  'POST',
@@ -235,28 +227,29 @@
         body:    params
       });
       return { ok: true };
-    } catch(e2) { /* continúa */ }
+    } catch(err1) {}
 
-    // Método 3: form submit oculto via iframe (dispara y olvida)
+    // Metodo 2: form submit POST via iframe oculto
     return new Promise(function(resolve) {
       try {
-        var iframeName = 'hidden-submit-' + Date.now();
+        var ts = Date.now();
         var iframe = document.createElement('iframe');
-        iframe.name = iframeName;
-        iframe.style.display = 'none';
+        iframe.name = 'hf-' + ts;
+        iframe.style.cssText = 'display:none;position:fixed;top:-9999px;';
         document.body.appendChild(iframe);
 
         var form = document.createElement('form');
-        form.method = 'GET';
-        form.action = SHEETS_URL;
-        form.target = iframeName;
+        form.method  = 'POST';
+        form.action  = SHEETS_URL;
+        form.target  = 'hf-' + ts;
+        form.enctype = 'application/x-www-form-urlencoded';
         form.style.display = 'none';
 
         Object.keys(reg).forEach(function(k) {
           var inp = document.createElement('input');
           inp.type  = 'hidden';
           inp.name  = k;
-          inp.value = reg[k];
+          inp.value = String(reg[k]);
           form.appendChild(inp);
         });
 
@@ -267,9 +260,9 @@
           try { document.body.removeChild(form); }   catch(e){}
           try { document.body.removeChild(iframe); } catch(e){}
           resolve({ ok: true });
-        }, 3000);
-      } catch(e3) {
-        resolve({ ok: false, mensaje: 'No se pudo enviar la reserva. Verifica tu conexión e intenta nuevamente.' });
+        }, 4000);
+      } catch(err2) {
+        resolve({ ok: false, mensaje: 'No se pudo enviar la reserva. Verifica tu conexion e intenta nuevamente.' });
       }
     });
   }
