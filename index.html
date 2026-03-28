@@ -176,7 +176,7 @@
 </div>
 
 <script>
-  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzPfiQr-1epJDe2WI82NdglXfHTeftQgBIQFhGL7_m3qDQLb5QdA5LZxRX-Gsaqc5iQ4w/exec';
+  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz70sYgAc-IUE2ugz3b-bxbX6LC-L3tqAXfJ4gwg7vQuTB1ZaQoepkJvIdaZZAjmIV9FQ/exec';
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
   // Fecha de hoy en hora local (evita desfase UTC-5 de Perú)
@@ -211,61 +211,67 @@
   }
 
   // ── Sheets ──
-  // GitHub Pages bloquea siempre la LECTURA de la respuesta de Apps Script por CORS.
-  // Solución: no-cors como método principal (dato llega, no leemos respuesta).
-  // Fallback: form submit oculto via iframe si fetch falla completamente.
+  // Método principal: GET con parámetros en URL (Apps Script doGet → e.parameter).
+  // Fallback 1: POST form-urlencoded (Apps Script doPost → e.parameter).
+  // Fallback 2: form submit via iframe (dispara y olvida).
   async function enviarASheets(reg) {
+    var params = Object.keys(reg).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(reg[k]);
+    }).join('&');
     var payload = JSON.stringify(reg);
 
-    // Método 1: fetch no-cors (GitHub Pages compatible)
+    // Método 1: GET con parámetros en URL (más confiable con Apps Script doGet)
+    try {
+      await fetch(SHEETS_URL + '?' + params, { method: 'GET', mode: 'no-cors' });
+      return { ok: true };
+    } catch(e1) { /* continúa */ }
+
+    // Método 2: POST form-urlencoded (Apps Script doPost → e.parameter)
     try {
       await fetch(SHEETS_URL, {
         method:  'POST',
         mode:    'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body:    payload
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body:    params
       });
       return { ok: true };
-    } catch (err) {
-      // Método 2: form submit oculto via iframe
-      return new Promise(function(resolve) {
-        try {
-          var iframeName = 'hidden-submit-' + Date.now();
-          var iframe = document.createElement('iframe');
-          iframe.name = iframeName;
-          iframe.style.display = 'none';
-          document.body.appendChild(iframe);
+    } catch(e2) { /* continúa */ }
 
-          var form = document.createElement('form');
-          form.method = 'POST';
-          form.action = SHEETS_URL;
-          form.target = iframeName;
-          form.style.display = 'none';
+    // Método 3: form submit oculto via iframe (dispara y olvida)
+    return new Promise(function(resolve) {
+      try {
+        var iframeName = 'hidden-submit-' + Date.now();
+        var iframe = document.createElement('iframe');
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
 
-          Object.keys(reg).forEach(function(k) {
-            var inp = document.createElement('input');
-            inp.type = 'hidden';
-            inp.name = k;
-            inp.value = reg[k];
-            form.appendChild(inp);
-          });
+        var form = document.createElement('form');
+        form.method = 'GET';
+        form.action = SHEETS_URL;
+        form.target = iframeName;
+        form.style.display = 'none';
 
-          document.body.appendChild(form);
-          form.submit();
+        Object.keys(reg).forEach(function(k) {
+          var inp = document.createElement('input');
+          inp.type  = 'hidden';
+          inp.name  = k;
+          inp.value = reg[k];
+          form.appendChild(inp);
+        });
 
-          setTimeout(function() {
-            try { document.body.removeChild(form); } catch(e){}
-            try { document.body.removeChild(iframe); } catch(e){}
-            resolve({ ok: true });
-          }, 3000);
-        } catch (err2) {
-          resolve({
-            ok: false,
-            mensaje: 'No se pudo enviar la reserva. Verifica tu conexión e intenta nuevamente.<br><small style="color:#718096;">' + err2.message + '</small>'
-          });
-        }
-      });
-    }
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(function() {
+          try { document.body.removeChild(form); }   catch(e){}
+          try { document.body.removeChild(iframe); } catch(e){}
+          resolve({ ok: true });
+        }, 3000);
+      } catch(e3) {
+        resolve({ ok: false, mensaje: 'No se pudo enviar la reserva. Verifica tu conexión e intenta nuevamente.' });
+      }
+    });
   }
 
   // ── Modales ──
