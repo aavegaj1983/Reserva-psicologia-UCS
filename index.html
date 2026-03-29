@@ -33,8 +33,8 @@
   .card { background: #fff; border-radius: 12px; padding: 20px 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 20px; }
   .card h2 { font-size: 1rem; color: #2b6cb0; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
 
-  /* ── Grid ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  /* ── Grid: 1 col mobile, 2 col tablet+ ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field.full { grid-column: 1 / -1; }
 
@@ -62,8 +62,11 @@
 
   /* ── Filas de horario y externos ── */
   .row-item { display: grid; gap: 10px; align-items: start; margin-bottom: 12px; }
+  /* Horario mobile: label arriba, fecha full, inicio+fin en fila con botón */
   .row-horario { grid-template-columns: 1fr 1fr auto; }
   .row-horario .row-label { grid-column: 1 / -1; font-size: 0.78rem; font-weight: 700; color: #718096; }
+  .row-horario .hor-fecha-wrap { grid-column: 1 / -1; }
+  /* Externos mobile: nombre full, DNI + botón en fila */
   .row-externo { grid-template-columns: 1fr auto; }
   .row-externo .ext-nombre { grid-column: 1 / -1; }
   .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; }
@@ -86,8 +89,10 @@
     header h1 { font-size: 1.2rem; }
     .section { padding: 28px 24px; }
     .card { padding: 24px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
     .row-horario { grid-template-columns: 72px 1.4fr 1fr 1fr auto; }
     .row-horario .row-label { grid-column: auto; }
+    .row-horario .hor-fecha-wrap { grid-column: auto; }
     .row-externo { grid-template-columns: 1fr 1fr auto; }
     .row-externo .ext-nombre { grid-column: auto; }
   }
@@ -567,7 +572,7 @@
     div.className='row-item row-horario';
     var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'horarios-lista\',\'Opción\')">✕</button>':'<span></span>';
         div.innerHTML='<span class="row-label">Opción '+idx+'</span>'
-      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +'<div class="hor-fecha-wrap" style="display:flex;flex-direction:column;gap:3px;">'
       +'<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
       +'<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
       +'<span class="fecha-nota" style="display:none;"></span>'
