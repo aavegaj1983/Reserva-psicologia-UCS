@@ -246,86 +246,149 @@
   var today = getTodayLocal();
   var reservas    = [];
 
-  // Responsables por sede > dia semana (1=Lun..5=Vie) > turno M(manana) / T(tarde)
-  // M: 07:00-14:00  |  T: 14:00-22:00
+  // ── Responsables exactos por sede > dia (1=Lun..5=Vie) ──
+  // Cada entrada: { nombre, inicio, fin } en formato HH:MM
   var RESPONSABLES = {
     'Sede Ate': {
-      1: { T: ['Alan'] },
-      2: { M: ['Enver'], T: ['Alan'] },
-      3: { M: ['Armando'], T: ['Alan'] },
-      5: { M: ['Armando'] }
+      1: [ // Lunes
+        { nombre:'Alan',    inicio:'14:00', fin:'19:00' }
+      ],
+      2: [ // Martes
+        { nombre:'Enver',   inicio:'08:30', fin:'14:00' },
+        { nombre:'Alan',    inicio:'15:00', fin:'20:00' }
+      ],
+      3: [ // Miércoles
+        { nombre:'Armando', inicio:'08:30', fin:'14:00' }
+      ],
+      5: [ // Viernes
+        { nombre:'Armando', inicio:'10:00', fin:'14:00' }
+      ]
     },
     'Sede Norte': {
-      1: { M: ['Maritza', 'Gladys'], T: ['John'] },
-      3: { M: ['Jenny'], T: ['John'] },
-      4: { M: ['Jenny', 'Gladys'] },
-      5: { M: ['Maritza', 'Jenny'], T: ['John'] }
+      1: [ // Lunes
+        { nombre:'Maritza', inicio:'12:00', fin:'14:00' },
+        { nombre:'Gladys',  inicio:'11:30', fin:'14:00' },
+        { nombre:'John',    inicio:'16:30', fin:'18:00' }
+      ],
+      3: [ // Miércoles
+        { nombre:'Jenny',   inicio:'08:30', fin:'12:00' },
+        { nombre:'John',    inicio:'14:00', fin:'18:00' }
+      ],
+      4: [ // Jueves
+        { nombre:'Gladys',  inicio:'08:30', fin:'10:00' },
+        { nombre:'Jenny',   inicio:'08:30', fin:'14:00' }
+      ],
+      5: [ // Viernes
+        { nombre:'Jenny',   inicio:'11:00', fin:'12:00' },
+        { nombre:'Maritza', inicio:'12:00', fin:'14:00' },
+        { nombre:'John',    inicio:'14:00', fin:'20:00' }
+      ]
     },
     'Sede Villa': {
-      1: { M: ['Paul'], T: ['Maite', 'Francis'] },
-      2: { M: ['Paul', 'Keiko'], T: ['Francis'] },
-      3: { M: ['Paul'], T: ['Verónica', 'Maité', 'Miluska'] },
-      4: { M: ['Enver', 'Keiko'], T: ['Verónica', 'Maite'] },
-      5: { T: ['Miluska'] }
+      1: [ // Lunes
+        { nombre:'Paul',    inicio:'12:00', fin:'14:00' },
+        { nombre:'Francis', inicio:'14:00', fin:'17:00' },
+        { nombre:'Maite',   inicio:'18:00', fin:'20:00' }
+      ],
+      2: [ // Martes
+        { nombre:'Paul',    inicio:'08:30', fin:'11:00' },
+        { nombre:'Francis', inicio:'14:00', fin:'17:00' }
+      ],
+      3: [ // Miércoles
+        { nombre:'Paul',    inicio:'08:30', fin:'11:00' },
+        { nombre:'Verónica',inicio:'14:00', fin:'15:00' },
+        { nombre:'Maité',   inicio:'16:30', fin:'18:00' },
+        { nombre:'Miluska', inicio:'17:00', fin:'20:00' }
+      ],
+      4: [ // Jueves
+        { nombre:'Enver',   inicio:'08:30', fin:'11:00' },
+        { nombre:'Keiko',   inicio:'08:30', fin:'14:00' },
+        { nombre:'Verónica',inicio:'14:00', fin:'18:00' },
+        { nombre:'Maite',   inicio:'14:00', fin:'18:00' }
+      ],
+      5: [ // Viernes
+        { nombre:'Miluska', inicio:'19:00', fin:'20:00' }
+      ]
     }
   };
 
-  // Devuelve turnos disponibles {M:[...], T:[...]} para sede+fecha
-  function getTurnosDisponibles(sede, fecha) {
-    if (!sede || !fecha) return {};
+  // Devuelve franjas cobertas por responsables para sede+fecha
+  // Resultado: array de {inicio, fin, nombre} unificando solapamientos
+  function getFranjasDisponibles(sede, fecha) {
+    if (!sede || !fecha) return [];
     var d = new Date(fecha + 'T12:00:00');
-    var dow = d.getDay(); // 0=Dom,1=Lun..5=Vie,6=Sab
-    var sedeData = RESPONSABLES[sede];
-    if (!sedeData) return {};
-    return sedeData[dow] || {};
+    var dow = d.getDay();
+    var lista = (RESPONSABLES[sede] || {})[dow] || [];
+    return lista; // array de {nombre, inicio, fin}
   }
 
-  // Habilita/deshabilita opciones de hora segun turno disponible
+  // ¿Una hora dada cae dentro de alguna franja de responsable?
+  function estaEnFranja(franjas, hora) {
+    var m = timeToMin(hora);
+    return franjas.some(function(f) {
+      return m >= timeToMin(f.inicio) && m <= timeToMin(f.fin);
+    });
+  }
+
+  // Habilita en los selects solo las horas cubiertas por responsables
+  // y deshabilita las que ya están ocupadas por reservas
   function actualizarHorasDisponibles(fila, sede, fecha) {
-    var turnos = getTurnosDisponibles(sede, fecha);
-    var haM = !!turnos.M;
-    var haT = !!turnos.T;
-    var sinAtencion = !haM && !haT && !!fecha;
+    var franjas = getFranjasDisponibles(sede, fecha);
+    var sinAtencion = franjas.length === 0 && !!fecha;
+    var espacio = document.getElementById('espacio').value;
+    var ocupados = fecha ? getHorariosOcupados(sede, espacio, fecha) : [];
 
     ['.hor-hora', '.hor-hora-fin'].forEach(function(cls) {
       var sel = fila.querySelector(cls);
       if (!sel) return;
+      var prevVal = sel.value;
       Array.from(sel.options).forEach(function(opt) {
         if (!opt.value) return;
-        var min = timeToMin(opt.value);
-        var enM = min >= 7*60 && min <= 14*60;
-        var enT = min >= 14*60 && min <= 22*60;
-        var habilitada = (haM && enM) || (haT && enT);
+        var enFranja = estaEnFranja(franjas, opt.value);
+        // Para inicio: bloquear horas que ya generan conflicto
+        var bloqueadoPorReserva = false;
+        if (cls === '.hor-hora' && ocupados.length) {
+          bloqueadoPorReserva = ocupados.some(function(o) {
+            return opt.value >= o.inicio && opt.value < o.fin;
+          });
+        }
+        var habilitada = enFranja && !bloqueadoPorReserva;
         opt.disabled = !habilitada;
         opt.style.color = habilitada ? '' : '#ccc';
       });
-      if (sel.value && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].disabled) {
+      // Si la selección actual quedó deshabilitada, limpiar
+      if (prevVal && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].disabled) {
         sel.value = '';
       }
     });
 
-    // Mensaje si el dia no tiene atencion
     var nota = fila.querySelector('.fecha-nota');
     if (nota) {
       if (sinAtencion) {
         nota.textContent = '✖ Sin atención este día';
-        nota.style.color = '#e53e3e';
-        nota.style.display = 'block';
+        nota.style.cssText = 'color:#e53e3e;font-size:0.75rem;display:block;margin-top:2px;';
+      } else if (!!fecha && franjas.length > 0) {
+        // Mostrar franja(s) disponibles como info
+        var resumen = franjas.map(function(f){ return f.inicio+' – '+f.fin; });
+        // Agrupar por franja única
+        var uniq = resumen.filter(function(v,i,a){ return a.indexOf(v)===i; });
+        nota.textContent = '✔ Disponible: ' + uniq.join(' | ');
+        nota.style.cssText = 'color:#276749;font-size:0.72rem;display:block;margin-top:2px;';
       } else {
         nota.style.display = 'none';
       }
     }
   }
 
-  // Calcula responsable(s) segun sede + fecha + hora de inicio
+  // Devuelve nombre(s) del responsable para sede+fecha+horaInicio
   function calcularResponsable(sede, fecha, horaInicio) {
     if (!sede || !fecha || !horaInicio) return '';
-    var turnos = getTurnosDisponibles(sede, fecha);
-    var min = timeToMin(horaInicio);
-    var turno = min < 14*60 ? 'M' : 'T';
-    var lista = turnos[turno];
-    if (!lista || !lista.length) return '';
-    return lista.join(', ');
+    var franjas = getFranjasDisponibles(sede, fecha);
+    var m = timeToMin(horaInicio);
+    var resp = franjas.filter(function(f) {
+      return m >= timeToMin(f.inicio) && m < timeToMin(f.fin);
+    }).map(function(f){ return f.nombre; });
+    return resp.length ? resp.join(', ') : '';
   }
 
   // ── Storage (no bloquea si falla) ──
