@@ -153,11 +153,11 @@
     <div class="grid-2">
       <div class="field">
         <label>Espacio a reservar <span class="req">*</span></label>
-        <select id="espacio" onchange="actualizarFechasBloqueadas()">
+        <select id="espacio" onchange="actualizarFechasBloqueadas(); actualizarMaxPersonas();">
           <option value="">-- Seleccionar --</option><option>Sala Gesell</option><option>Testoteca</option><option>Consultorios de simulación</option>
         </select>
       </div>
-      <div class="field"><label>Número de personas <span class="req">*</span></label><input type="number" id="personas" min="1" max="50" placeholder="Ej. 5"/></div>
+      <div class="field"><label>Número de personas <span class="req">*</span></label><input type="number" id="personas" min="1" max="50" placeholder="Ej. 5" oninput="validarPersonasInput()"/><small id="personas-hint" style="color:#718096;font-size:0.78rem;display:none;"></small></div>
       <div class="field full">
         <label>Opciones de horario <span class="req">*</span><br><small style="font-weight:400;color:#718096;">Agrega una o más alternativas en orden de preferencia</small></label>
         <div id="horarios-lista"></div>
@@ -653,7 +653,63 @@
     filtrarHorasPasadas(div, div.querySelector('.hor-fecha').value);
   }
 
-  function onSedeChange() {
+  // ── Capacidad máxima por sede y espacio ──
+  var CAPACIDAD = {
+    'Sede Villa': { 'Consultorios de simulación': 8 },
+    'Sede Ate':   { 'Testoteca': 14, 'Sala Gesell': 11 },
+    'Sede Norte': { 'Sala Gesell': 10, 'Testoteca': 10 }
+  };
+
+  function getMaxPersonas(sede, espacio) {
+    if (!sede || !espacio) return null;
+    return (CAPACIDAD[sede] && CAPACIDAD[sede][espacio]) ? CAPACIDAD[sede][espacio] : null;
+  }
+
+  function actualizarMaxPersonas() {
+    var sede   = document.getElementById('sede').value;
+    var espacio = document.getElementById('espacio').value;
+    var input  = document.getElementById('personas');
+    var hint   = document.getElementById('personas-hint');
+    var max    = getMaxPersonas(sede, espacio);
+    if (max) {
+      input.max = max;
+      hint.textContent = 'Máximo permitido: ' + max + ' personas';
+      hint.style.display = 'block';
+      hint.style.color = '#718096';
+      // Si ya hay un valor mayor al nuevo máximo, marcarlo
+      if (input.value && parseInt(input.value) > max) {
+        input.classList.add('field-error');
+        hint.style.color = '#e53e3e';
+        hint.textContent = '⚠ Supera el máximo permitido: ' + max + ' personas';
+      } else {
+        input.classList.remove('field-error');
+      }
+    } else {
+      input.max = 50;
+      hint.style.display = 'none';
+      input.classList.remove('field-error');
+    }
+  }
+
+  function validarPersonasInput() {
+    var sede    = document.getElementById('sede').value;
+    var espacio = document.getElementById('espacio').value;
+    var input   = document.getElementById('personas');
+    var hint    = document.getElementById('personas-hint');
+    var max     = getMaxPersonas(sede, espacio);
+    if (!max) return;
+    if (parseInt(input.value) > max) {
+      input.classList.add('field-error');
+      hint.style.color = '#e53e3e';
+      hint.textContent = '⚠ Supera el máximo permitido: ' + max + ' personas';
+    } else {
+      input.classList.remove('field-error');
+      hint.style.color = '#718096';
+      hint.textContent = 'Máximo permitido: ' + max + ' personas';
+    }
+  }
+
+    function onSedeChange() {
     var sede=document.getElementById('sede').value;
     var sel=document.getElementById('espacio');
     var actual=sel.value;
@@ -663,6 +719,7 @@
     var opts=Array.from(sel.options).map(function(o){ return o.value; });
     sel.value=opts.indexOf(actual)!==-1?actual:'';
     actualizarFechasBloqueadas();
+    actualizarMaxPersonas();
     // Actualizar horas disponibles en filas existentes
     document.querySelectorAll('#horarios-lista > div').forEach(function(fila) {
       var fecha = fila.querySelector('.hor-fecha') ? fila.querySelector('.hor-fecha').value : '';
@@ -717,7 +774,9 @@
     if(!modalidad){ marcarError('modalidad'); mostrarError('Selecciona la <b>Modalidad de estudios</b>.'); return; }
     if(!curso){ marcarError('curso'); mostrarError('El campo <b>Curso</b> es obligatorio.'); return; }
     if(!espacio){ marcarError('espacio'); mostrarError('Selecciona el <b>Espacio a reservar</b>.'); return; }
+    var maxP = getMaxPersonas(sede, espacio);
     if(!personas||parseInt(personas)<1){ marcarError('personas'); mostrarError('El <b>Número de personas</b> debe ser al menos 1.'); return; }
+    if(maxP && parseInt(personas) > maxP){ marcarError('personas'); mostrarError('El <b>Número de personas</b> supera el máximo permitido para este espacio: <b>'+maxP+' personas</b>.'); return; }
 
     var filasHor=document.querySelectorAll('#horarios-lista > div');
     if(!filasHor.length){ mostrarError('Agrega al menos una <b>opción de horario</b>.'); return; }
