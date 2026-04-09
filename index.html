@@ -16,7 +16,6 @@
   .tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e8f0; }
   .tab { padding: 14px 28px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #718096; border-bottom: 3px solid transparent; transition: all .2s; }
   .tab.active { color: #2b6cb0; border-bottom-color: #2b6cb0; }
-  .tab:hover:not(.active) { color: #4a5568; background: #f7fafc; }
   .section { display: none; padding: 32px; max-width: 760px; margin: 0 auto; }
   .section.active { display: block; }
   .card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 24px; }
@@ -26,18 +25,21 @@
   .field.full { grid-column: 1 / -1; }
   label { font-size: 0.82rem; font-weight: 600; color: #4a5568; }
   label span.req { color: #e53e3e; }
-  input, select, textarea { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 9px 12px; font-size: 0.92rem; color: #2d3748; transition: border .2s; background: #f7fafc; font-family: inherit; }
+  input, select, textarea { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 9px 12px; font-size: 0.92rem; color: #2d3748; transition: border .2s; background: #f7fafc; font-family: inherit; width: 100%; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: #2b6cb0; background: #fff; }
-  input.field-error { border-color: #e53e3e !important; background: #fff5f5 !important; }
+  input.field-error, select.field-error { border-color: #e53e3e !important; background: #fff5f5 !important; }
   textarea { resize: vertical; min-height: 80px; }
   .btn-submit { width: 100%; padding: 13px; background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s; margin-top: 8px; }
   .btn-submit:hover { opacity: .9; }
   .btn-add { padding: 7px 16px; background: #2b6cb0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-top: 10px; }
   .btn-remove { background: #fed7d7; color: #9b2c2c; border: none; border-radius: 8px; padding: 9px 12px; cursor: pointer; font-weight: 700; font-size: 1rem; }
-  .row-item { display: grid; gap: 10px; align-items: center; margin-bottom: 10px; }
-  .row-horario { grid-template-columns: 80px 1fr 1fr 1fr auto; align-items: center; }
-  .row-externo { grid-template-columns: 1fr 1fr auto; }
-  .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; }
+  .row-item { display: grid; gap: 10px; align-items: start; margin-bottom: 10px; }
+  .row-horario { grid-template-columns: 80px 1fr 1fr 1fr auto; }
+  .row-externo { grid-template-columns: 1fr 1fr auto; align-items: center; }
+  .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; padding-top: 28px; }
+  .aforo-note { font-size: 0.78rem; color: #2b6cb0; margin-top: 4px; }
+  .disponibilidad-note { font-size: 0.78rem; color: #276749; margin-top: 3px; }
+  .fecha-nota { display: none; font-size: 0.75rem; color: #dd6b20; }
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
   .modal-box { background: white; border-radius: 20px; padding: 44px 40px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: popIn .3s ease; }
@@ -61,9 +63,7 @@
   <button class="btn-admin-gear" id="btn-gear" title="Administrador">⚙️</button>
 </header>
 
-<div class="tabs" id="tabs-bar">
-  <div class="tab active" onclick="switchTab('form')">📋 Formulario de Reserva</div>
-</div>
+<div class="tabs"><div class="tab active">📋 Formulario de Reserva</div></div>
 
 <div class="section active" id="tab-form">
   <div class="card">
@@ -96,15 +96,16 @@
     <div class="grid-2">
       <div class="field">
         <label>Espacio a reservar <span class="req">*</span></label>
-        <select id="espacio" onchange="actualizarFechasBloqueadas()">
-          <option value="">-- Seleccionar --</option><option>Sala Gesell</option><option>Testoteca</option><option>Consultorios de simulación</option>
+        <select id="espacio" onchange="onEspacioChange()">
+          <option value="">-- Seleccionar --</option>
+          <option>Sala Gesell</option><option>Testoteca</option><option>Consultorios de simulación</option>
         </select>
+        <div id="aforo-note" class="aforo-note" style="display:none;"></div>
       </div>
       <div class="field"><label>Número de personas <span class="req">*</span></label><input type="number" id="personas" min="1" max="50" placeholder="Ej. 5"/></div>
       <div class="field full">
         <label>Opciones de horario <span class="req">*</span><br><small style="font-weight:400;color:#718096;">Agrega una o más alternativas en orden de preferencia</small></label>
         <div id="horarios-lista"></div>
-        <div id="fechas-ocupadas-note" style="display:none;font-size:0.78rem;color:#dd6b20;margin-top:4px;">⚠ Esta fecha tiene reservas. Verifica que tu horario no se solape al enviar.</div>
         <button type="button" class="btn-add" onclick="agregarHorario()">+ Agregar horario alternativo</button>
       </div>
       <div class="field full"><label>Motivo de uso <span class="req">*</span></label><textarea id="motivo" placeholder="Describa brevemente el propósito de la reserva..."></textarea></div>
@@ -142,7 +143,7 @@
   </div>
 </div>
 
-<!-- MODAL ADMIN LOGIN -->
+<!-- MODAL ADMIN -->
 <div class="modal-overlay" id="modal-admin-login">
   <div class="modal-box">
     <div class="modal-icon">🔐</div>
@@ -158,78 +159,102 @@
 </div>
 
 <script>
-  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyoPbqMKpuiolrzWv5cXU4SMokSMJU2sIcSVHTheG4RZXIbX_EbRqShE-YR4RPH2Qs7/exec';
+  // ── Configuración ──────────────────────────────────────
+  var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz7x9nSfpEXOKJ2Iw2Ae8cdVzLNAIDll96gKLZrQyzbldP3wLVYccznI3FJvq7Wlpdung/exec';
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
+  var today       = new Date().toISOString().split('T')[0];
+  var reservas    = [];
+
   var CORREOS_SEDE = {
     'Sede Ate':   'avegaj@cientifica.edu.pe',
     'Sede Norte': 'jespinozaqu@cientifica.edu.pe',
     'Sede Villa': 'pbrocca@cientifica.edu.pe'
   };
-  var today       = new Date().toISOString().split('T')[0];
-  var reservas    = [];
 
-  // ── Storage (no bloquea si falla) ──
+  var AFORO_ESPACIO = {
+    'Sala Gesell':               'Aforo máximo: 15 personas',
+    'Testoteca':                  'Aforo máximo: 10 personas',
+    'Consultorios de simulación': 'Aforo máximo: 6 personas por consultorio'
+  };
+
+  var HORARIO_ESPACIO = {
+    'Sala Gesell':               '08:30 – 12:00 | 14:00 – 18:00',
+    'Testoteca':                  '08:00 – 13:00 | 14:00 – 18:00',
+    'Consultorios de simulación': '08:00 – 13:00 | 14:00 – 20:00'
+  };
+
+  // ── Storage ────────────────────────────────────────────
   async function cargarReservas() {
-    try {
-      if (window.storage) {
-        var r = await window.storage.get('psico_reservas_v1', true);
-        if (r && r.value) reservas = JSON.parse(r.value);
-      }
-    } catch(e) {}
-    try {
-      var local = localStorage.getItem('psico_reservas_v1');
-      if (local && !reservas.length) reservas = JSON.parse(local);
-    } catch(e) {}
+    try { if(window.storage){ var r=await window.storage.get('psico_reservas_v1',true); if(r&&r.value) reservas=JSON.parse(r.value); } } catch(e){}
+    try { var l=localStorage.getItem('psico_reservas_v1'); if(l&&!reservas.length) reservas=JSON.parse(l); } catch(e){}
   }
-
   async function guardarReservas() {
-    var data = JSON.stringify(reservas);
-    try { if (window.storage) await window.storage.set('psico_reservas_v1', data, true); } catch(e) {}
-    try { localStorage.setItem('psico_reservas_v1', data); } catch(e) {}
+    var d=JSON.stringify(reservas);
+    try { if(window.storage) await window.storage.set('psico_reservas_v1',d,true); } catch(e){}
+    try { localStorage.setItem('psico_reservas_v1',d); } catch(e){}
   }
 
-  // ── Sheets ──
+  // ── Sheets ────────────────────────────────────────────
   async function enviarASheets(reg) {
     try {
       var res = await fetch(SHEETS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg) });
       return await res.json();
-    } catch(e) { return { ok: true, mensaje: '' }; }
+    } catch(e) { return { ok:true, mensaje:'' }; }
   }
 
-  // ── Modales ──
-  function mostrarError(msg) {
-    document.getElementById('modal-error-msg').innerHTML = msg;
-    document.getElementById('modal-error').classList.add('show');
-  }
+  // ── Modales ───────────────────────────────────────────
+  function mostrarError(msg) { document.getElementById('modal-error-msg').innerHTML=msg; document.getElementById('modal-error').classList.add('show'); }
   function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
 
-  // ── Admin ──
+  // ── Admin ─────────────────────────────────────────────
   function validarAdmin() {
-    var inp = document.getElementById('admin-pw-input');
-    var err = document.getElementById('admin-pw-error');
-    if (inp.value === ADMIN_PASS) {
+    if(document.getElementById('admin-pw-input').value===ADMIN_PASS){
       cerrarModal('modal-admin-login');
-      window.open(SHEETS_LINK, '_blank');
+      window.open(SHEETS_LINK,'_blank');
     } else {
-      err.style.display = 'block';
-      inp.focus();
+      document.getElementById('admin-pw-error').style.display='block';
+      document.getElementById('admin-pw-input').focus();
     }
   }
 
-  // ── Validaciones ──
-  var reCorreo   = /^[^\s@]+@cientifica\.edu\.pe$/;
-  var reTelefono = /^9\d{8}$/;
-  var reDNI      = /^\d{8}$/;
+  // ── Validaciones ──────────────────────────────────────
+  var reCorreo=/^[^\s@]+@cientifica\.edu\.pe$/;
+  var reTelefono=/^9\d{8}$/;
+  var reDNI=/^\d{8}$/;
+  function limpiarErrores(){ document.querySelectorAll('.field-error').forEach(function(el){ el.classList.remove('field-error'); }); }
+  function marcarError(id){ var el=document.getElementById(id); if(el) el.classList.add('field-error'); }
 
-  function limpiarErrores() { document.querySelectorAll('.field-error').forEach(function(el){ el.classList.remove('field-error'); }); }
-  function marcarError(id) { var el=document.getElementById(id); if(el) el.classList.add('field-error'); }
+  // ── Horas (select dinámico) ───────────────────────────
+  function getMinHora(fecha) {
+    if(fecha!==today) return null;
+    var ahora=new Date();
+    var hh=ahora.getHours(), mm=Math.ceil(ahora.getMinutes()/15)*15;
+    if(mm>=60){ hh+=1; mm=0; }
+    return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
+  }
 
-  // ── Tiempo ──
-  function timeToMin(t) { var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
-  function minToTime(m) { var h=Math.floor(m/60),mn=m%60; return (h<10?'0':'')+h+':'+(mn<10?'0':'')+mn; }
+  function generarOpcionesHora(sel, minTime) {
+    var val=sel.value;
+    sel.innerHTML='<option value="">--</option>';
+    for(var h=7;h<=22;h++){
+      for(var m=0;m<60;m+=15){
+        if(h===22&&m>0) continue;
+        var t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+        if(minTime&&t<minTime) continue;
+        var o=document.createElement('option');
+        o.value=t; o.textContent=t;
+        if(t===val) o.selected=true;
+        sel.appendChild(o);
+      }
+    }
+  }
 
-  function getHorariosOcupados(sede,espacio,fecha) {
+  // ── Conflictos ────────────────────────────────────────
+  function timeToMin(t){ var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+  function minToTime(m){ return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
+
+  function getHorariosOcupados(sede,espacio,fecha){
     var oc=[];
     reservas.forEach(function(r){
       if(r.espacio===espacio&&r.sede===sede){
@@ -242,11 +267,11 @@
     return oc;
   }
 
-  function hayConflicto(oc,ini,fin) { return oc.some(function(o){ return ini<o.fin&&fin>o.inicio; }); }
+  function hayConflicto(oc,ini,fin){ return oc.some(function(o){ return ini<o.fin&&fin>o.inicio; }); }
 
-  function hayConflictoMin(oc,s,e) { return oc.some(function(o){ return s<timeToMin(o.fin)&&e>timeToMin(o.inicio); }); }
+  function hayConflictoMin(oc,s,e){ return oc.some(function(o){ return s<timeToMin(o.fin)&&e>timeToMin(o.inicio); }); }
 
-  function sugerirHorario(oc,ini,fin) {
+  function sugerirHorario(oc,ini,fin){
     var dur=timeToMin(fin)-timeToMin(ini);
     var sorted=oc.slice().sort(function(a,b){ return timeToMin(a.inicio)-timeToMin(b.inicio); });
     var cands=[];
@@ -258,55 +283,24 @@
     return cands[0];
   }
 
-  function getFechasConReserva(sede,espacio) {
+  function getFechasConReserva(sede,espacio){
     var b={};
-    reservas.forEach(function(r){ if(r.espacio===espacio&&r.sede===sede){ r.horarios.split('|').forEach(function(h){ var f=h.trim().split(' ')[0]; if(f) b[f]=true; }); } });
+    reservas.forEach(function(r){ if(r.espacio===espacio&&r.sede===sede) r.horarios.split('|').forEach(function(h){ var f=h.trim().split(' ')[0]; if(f) b[f]=true; }); });
     return Object.keys(b);
   }
 
-  function actualizarFechasBloqueadas() {
+  // ── Espacio ───────────────────────────────────────────
+  function onEspacioChange(){
     var espacio=document.getElementById('espacio').value;
-    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){ actualizarEstadoFecha(fila,espacio); });
+    var note=document.getElementById('aforo-note');
+    if(espacio&&AFORO_ESPACIO[espacio]){
+      note.textContent='👥 '+AFORO_ESPACIO[espacio];
+      note.style.display='block';
+    } else { note.style.display='none'; }
+    actualizarTodasLasFechas();
   }
 
-  function actualizarEstadoFecha(fila,espacio) {
-    if(!espacio) return;
-    var sede=document.getElementById('sede').value;
-    var input=fila.querySelector('.hor-fecha');
-    var nota=fila.querySelector('.fecha-nota');
-    var tieneAlgo=getFechasConReserva(sede,espacio).indexOf(input.value)!==-1;
-    input.style.borderColor=tieneAlgo?'#dd6b20':'#cbd5e0';
-    input.style.background=tieneAlgo?'#fffaf0':'#f7fafc';
-    if(nota) nota.style.display=tieneAlgo?'block':'none';
-    document.getElementById('fechas-ocupadas-note').style.display=tieneAlgo?'block':'none';
-  }
-
-  function onFechaChange(input) { actualizarEstadoFecha(input.closest('.row-item'),document.getElementById('espacio').value); }
-
-  function agregarHorario() {
-    var lista=document.getElementById('horarios-lista');
-    var idx=lista.children.length+1;
-    var div=document.createElement('div');
-    div.className='row-item row-horario';
-    var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'horarios-lista\',\'Opción\')">✕</button>':'<span></span>';
-    div.innerHTML='<span class="row-label">Opción '+idx+'</span>'
-      +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +'<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
-      +'<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
-      +'<span class="fecha-nota" style="font-size:0.75rem;color:#dd6b20;display:none;">⚠ Esta fecha tiene reservas</span>'
-      +'</div>'
-      +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +'<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
-      +'<input type="time" class="hor-hora"/>'
-      +'</div>'
-      +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +'<label style="font-size:0.75rem;color:#718096;">Fin</label>'
-      +'<input type="time" class="hor-hora-fin"/>'
-      +'</div>'+removeBtn;
-    lista.appendChild(div);
-  }
-
-  function onSedeChange() {
+  function onSedeChange(){
     var sede=document.getElementById('sede').value;
     var sel=document.getElementById('espacio');
     var actual=sel.value;
@@ -315,38 +309,94 @@
     else sel.innerHTML+='<option>Sala Gesell</option><option>Testoteca</option>';
     var opts=Array.from(sel.options).map(function(o){ return o.value; });
     sel.value=opts.indexOf(actual)!==-1?actual:'';
-    actualizarFechasBloqueadas();
+    onEspacioChange();
   }
 
-  function toggleExternos() {
+  // ── Horarios ──────────────────────────────────────────
+  function actualizarTodasLasFechas(){
+    var espacio=document.getElementById('espacio').value;
+    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){ actualizarEstadoFecha(fila,espacio); });
+  }
+
+  function actualizarEstadoFecha(fila,espacio){
+    if(!espacio) return;
+    var sede=document.getElementById('sede').value;
+    var inputFecha=fila.querySelector('.hor-fecha');
+    var nota=fila.querySelector('.fecha-nota');
+    var dispNote=fila.querySelector('.disp-note');
+    var fechaVal=inputFecha.value;
+    var tieneAlgo=getFechasConReserva(sede,espacio).indexOf(fechaVal)!==-1;
+    inputFecha.style.borderColor=tieneAlgo?'#dd6b20':'#cbd5e0';
+    inputFecha.style.background=tieneAlgo?'#fffaf0':'#f7fafc';
+    if(nota) nota.style.display=tieneAlgo?'block':'none';
+    if(dispNote&&HORARIO_ESPACIO[espacio]&&fechaVal){
+      dispNote.textContent='✓ Disponible: '+HORARIO_ESPACIO[espacio];
+      dispNote.style.display='block';
+    } else if(dispNote){ dispNote.style.display='none'; }
+  }
+
+  function onFechaChange(input){
+    var fila=input.closest('.row-item');
+    var minH=getMinHora(input.value);
+    generarOpcionesHora(fila.querySelector('.hor-hora'),minH);
+    generarOpcionesHora(fila.querySelector('.hor-hora-fin'),minH);
+    actualizarEstadoFecha(fila,document.getElementById('espacio').value);
+  }
+
+  function agregarHorario(){
+    var lista=document.getElementById('horarios-lista');
+    var idx=lista.children.length+1;
+    var div=document.createElement('div');
+    div.className='row-item row-horario';
+    var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this)">✕</button>':'<span></span>';
+    div.innerHTML=
+      '<span class="row-label">Opción '+idx+'</span>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +  '<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
+      +  '<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
+      +  '<span class="fecha-nota" style="font-size:0.75rem;color:#dd6b20;display:none;">⚠ Esta fecha tiene reservas</span>'
+      +  '<span class="disp-note disponibilidad-note" style="display:none;"></span>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +  '<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
+      +  '<select class="hor-hora"></select>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:3px;">'
+      +  '<label style="font-size:0.75rem;color:#718096;">Fin</label>'
+      +  '<select class="hor-hora-fin"></select>'
+      +'</div>'
+      +removeBtn;
+    lista.appendChild(div);
+    generarOpcionesHora(div.querySelector('.hor-hora'), null);
+    generarOpcionesHora(div.querySelector('.hor-hora-fin'), null);
+  }
+
+  function eliminarFila(btn){
+    btn.parentElement.remove();
+    document.querySelectorAll('#horarios-lista > div').forEach(function(d,i){
+      var l=d.querySelector('.row-label'); if(l) l.textContent='Opción '+(i+1);
+    });
+  }
+
+  function toggleExternos(){
     var show=document.getElementById('externos-toggle').value==='si';
     document.getElementById('externos-box').style.display=show?'block':'none';
     if(show&&document.getElementById('externos-lista').children.length===0) agregarExterno();
   }
 
-  function agregarExterno() {
+  function agregarExterno(){
     var div=document.createElement('div');
     div.className='row-item row-externo';
     div.innerHTML='<input type="text" placeholder="Nombre completo" class="ext-nombre"/>'
       +'<input type="text" placeholder="DNI (8 dígitos)" maxlength="8" class="ext-dni"/>'
-      +'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'externos-lista\',null)">✕</button>';
+      +'<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
     document.getElementById('externos-lista').appendChild(div);
   }
 
-  function eliminarFila(btn,listaId,labelPrefix) {
-    btn.parentElement.remove();
-    if(labelPrefix) document.querySelectorAll('#'+listaId+' > div').forEach(function(d,i){ var l=d.querySelector('.row-label'); if(l) l.textContent=labelPrefix+' '+(i+1); });
-  }
+  function getVal(id){ return document.getElementById(id).value.trim(); }
 
-  function switchTab(t) {
-    document.querySelectorAll('.tab').forEach(function(el){ el.classList.remove('active'); });
-    document.querySelectorAll('.tab')[0].classList.add('active');
-    document.getElementById('tab-form').classList.add('active');
-  }
-
-  function getVal(id) { return document.getElementById(id).value.trim(); }
-
-  async function submitForm() {
+  // ── Submit ────────────────────────────────────────────
+  async function submitForm(){
     limpiarErrores();
     var nombre=getVal('nombre'),correo=getVal('correo'),telefono=getVal('telefono');
     var sede=getVal('sede'),tipo=getVal('tipo'),modalidad=getVal('modalidad');
@@ -363,6 +413,14 @@
     if(!curso){ marcarError('curso'); mostrarError('El campo <b>Curso</b> es obligatorio.'); return; }
     if(!espacio){ marcarError('espacio'); mostrarError('Selecciona el <b>Espacio a reservar</b>.'); return; }
     if(!personas||parseInt(personas)<1){ marcarError('personas'); mostrarError('El <b>Número de personas</b> debe ser al menos 1.'); return; }
+
+    // Validar aforo
+    var aforoMax={'Sala Gesell':15,'Testoteca':10,'Consultorios de simulación':6};
+    if(aforoMax[espacio]&&parseInt(personas)>aforoMax[espacio]){
+      marcarError('personas');
+      mostrarError('El <b>'+espacio+'</b> tiene un aforo máximo de <b>'+aforoMax[espacio]+' personas</b>.');
+      return;
+    }
 
     var filasHor=document.querySelectorAll('#horarios-lista > div');
     if(!filasHor.length){ mostrarError('Agrega al menos una <b>opción de horario</b>.'); return; }
@@ -405,7 +463,10 @@
       externosStr=pext.join(' | ');
     }
 
-    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr };
+    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,
+              horarios:horarios.join(' | '),motivo,
+              externos:tieneExternos?'Sí':'No',externosStr,
+              correoSede: CORREOS_SEDE[sede]||'' };
 
     var resultado=await enviarASheets(reg);
     if(resultado&&resultado.ok===false){
@@ -416,65 +477,37 @@
     reservas.push(reg);
     await guardarReservas();
 
+    // Reset
     ['nombre','correo','telefono','sede','tipo','modalidad','curso','espacio','personas','motivo'].forEach(function(f){ document.getElementById(f).value=''; });
     document.getElementById('horarios-lista').innerHTML='';
     document.getElementById('externos-toggle').value='no';
     document.getElementById('externos-lista').innerHTML='';
     document.getElementById('externos-box').style.display='none';
-    document.getElementById('fechas-ocupadas-note').style.display='none';
+    document.getElementById('aforo-note').style.display='none';
     agregarHorario();
-    var correo = CORREOS_SEDE[sede] || 'psicoalve@gmail.com';
-    document.getElementById('modal-exito-msg').innerHTML =
-      'Tu solicitud de reserva ha sido registrada exitosamente.<br><br>' +
-      'Nuestro equipo revisará la disponibilidad del espacio y del personal responsable ' +
-      'para el horario solicitado, y <b>te contactaremos en un plazo de 24 a 48 horas</b> ' +
-      'para confirmar o coordinar una alternativa.<br><br>' +
-      'Si tienes alguna consulta, puedes escribirnos a ' +
-      '<a href="mailto:' + correo + '" style="color:#2b6cb0;font-weight:600;">' + correo + '</a>.';
+
+    var correoSede=CORREOS_SEDE[sede]||'';
+    document.getElementById('modal-exito-msg').innerHTML=
+      'Tu solicitud de reserva ha sido registrada exitosamente.<br><br>'
+      +'Nuestro equipo revisará la disponibilidad del espacio y del personal responsable '
+      +'para el horario solicitado, y <b>te contactaremos en un plazo de 24 a 48 horas</b> '
+      +'para confirmar o coordinar una alternativa.<br><br>'
+      +'Si tienes alguna consulta, puedes escribirnos a '
+      +'<a href="mailto:'+correoSede+'" style="color:#2b6cb0;font-weight:600;">'+correoSede+'</a>.';
     document.getElementById('modal-exito').classList.add('show');
   }
 
-  // ── Inicialización (todo dentro de DOMContentLoaded) ──
-  document.addEventListener('DOMContentLoaded', function() {
-    // Tuerca → modal de contraseña
-    document.getElementById('btn-gear').addEventListener('click', function() {
-      document.getElementById('admin-pw-input').value = '';
-      document.getElementById('admin-pw-error').style.display = 'none';
+  // ── Init ──────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('btn-gear').addEventListener('click', function(){
+      document.getElementById('admin-pw-input').value='';
+      document.getElementById('admin-pw-error').style.display='none';
       document.getElementById('modal-admin-login').classList.add('show');
-      setTimeout(function(){ document.getElementById('admin-pw-input').focus(); }, 150);
+      setTimeout(function(){ document.getElementById('admin-pw-input').focus(); },150);
     });
-
-    // Enter en el campo de contraseña
-    document.getElementById('admin-pw-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') validarAdmin();
-    });
-
+    document.getElementById('admin-pw-input').addEventListener('keydown',function(e){ if(e.key==='Enter') validarAdmin(); });
     agregarHorario();
     cargarReservas();
-
-    // Bloqueo de horas pasadas al cambiar fecha
-    document.getElementById('horarios-lista').addEventListener('change', function(e) {
-      if (e.target.classList.contains('hor-fecha')) {
-        var fila = e.target.closest('.row-item');
-        var horaInicio = fila.querySelector('.hor-hora');
-        var horaFin    = fila.querySelector('.hor-hora-fin');
-        var ahora      = new Date();
-        var fechaHoy   = ahora.toISOString().split('T')[0];
-        if (e.target.value === fechaHoy) {
-          var hh = String(ahora.getHours()).padStart(2,'0');
-          var mm = String(ahora.getMinutes()).padStart(2,'0');
-          var minActual = hh + ':' + mm;
-          horaInicio.min = minActual;
-          horaFin.min    = minActual;
-          // limpiar si ya tenía un valor inválido
-          if (horaInicio.value && horaInicio.value < minActual) horaInicio.value = '';
-          if (horaFin.value    && horaFin.value    < minActual) horaFin.value    = '';
-        } else {
-          horaInicio.min = '';
-          horaFin.min    = '';
-        }
-      }
-    });
   });
 </script>
 </body>
