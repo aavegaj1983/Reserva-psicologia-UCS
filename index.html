@@ -6,50 +6,73 @@
 <title>Reservas – Facultad de Psicología</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #2d3748; min-height: 100vh; }
-  header { background: linear-gradient(135deg, #4a5568, #2b6cb0); color: white; padding: 24px 32px; display: flex; align-items: center; gap: 16px; position: relative; }
-  .btn-admin-gear { position: absolute; top: 16px; right: 20px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 38px; height: 38px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #2d3748; min-height: 100vh; -webkit-text-size-adjust: 100%; }
+  header { background: linear-gradient(135deg, #4a5568, #2b6cb0); color: white; padding: 20px 20px 20px 16px; display: flex; align-items: center; gap: 12px; position: relative; }
+  .btn-admin-gear { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.15); border: none; border-radius: 50%; width: 38px; height: 38px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s; flex-shrink: 0; }
   .btn-admin-gear:hover { background: rgba(255,255,255,0.3); }
-  header .icon { font-size: 2.2rem; }
-  header h1 { font-size: 1.4rem; font-weight: 700; }
-  header p { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
-  .tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e8f0; }
-  .tab { padding: 14px 28px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #718096; border-bottom: 3px solid transparent; transition: all .2s; }
+  header .icon { font-size: 2rem; flex-shrink: 0; }
+  header h1 { font-size: 1.05rem; font-weight: 700; line-height: 1.3; padding-right: 40px; }
+  header p { font-size: 0.8rem; opacity: 0.85; margin-top: 3px; }
+  .tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e8f0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { padding: 13px 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; color: #718096; border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap; }
   .tab.active { color: #2b6cb0; border-bottom-color: #2b6cb0; }
-  .section { display: none; padding: 32px; max-width: 760px; margin: 0 auto; }
+  .tab:hover:not(.active) { color: #4a5568; background: #f7fafc; }
+  .section { display: none; padding: 20px 16px; max-width: 760px; margin: 0 auto; }
   .section.active { display: block; }
-  .card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 24px; }
-  .card h2 { font-size: 1.1rem; color: #2b6cb0; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 20px; }
+  .card h2 { font-size: 1rem; color: #2b6cb0; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
   .field { display: flex; flex-direction: column; gap: 6px; }
   .field.full { grid-column: 1 / -1; }
   label { font-size: 0.82rem; font-weight: 600; color: #4a5568; }
   label span.req { color: #e53e3e; }
-  input, select, textarea { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 9px 12px; font-size: 0.92rem; color: #2d3748; transition: border .2s; background: #f7fafc; font-family: inherit; width: 100%; }
+  input, select, textarea { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 10px 12px; font-size: 1rem; color: #2d3748; transition: border .2s; background: #f7fafc; font-family: inherit; width: 100%; -webkit-appearance: none; appearance: none; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23718096' d='M1 1l5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .sel-hora { border: 1.5px solid #cbd5e0; border-radius: 8px; padding: 10px 8px; font-size: 1rem; color: #2d3748; background-color: #f7fafc; font-family: inherit; cursor: pointer; width: 100%; -webkit-appearance: none; appearance: none; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: #2b6cb0; background: #fff; }
   input.field-error, select.field-error { border-color: #e53e3e !important; background: #fff5f5 !important; }
   textarea { resize: vertical; min-height: 80px; }
-  .btn-submit { width: 100%; padding: 13px; background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s; margin-top: 8px; }
+  .btn-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s; margin-top: 8px; touch-action: manipulation; }
   .btn-submit:hover { opacity: .9; }
-  .btn-add { padding: 7px 16px; background: #2b6cb0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-top: 10px; }
-  .btn-remove { background: #fed7d7; color: #9b2c2c; border: none; border-radius: 8px; padding: 9px 12px; cursor: pointer; font-weight: 700; font-size: 1rem; }
-  .row-item { display: grid; gap: 10px; align-items: start; margin-bottom: 10px; }
-  .row-horario { grid-template-columns: 80px 1fr 1fr 1fr auto; }
-  .row-externo { grid-template-columns: 1fr 1fr auto; align-items: center; }
-  .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; padding-top: 28px; }
+  .btn-add { padding: 10px 18px; background: #2b6cb0; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.88rem; font-weight: 600; margin-top: 10px; touch-action: manipulation; }
+  .btn-remove { background: #fed7d7; color: #9b2c2c; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; font-weight: 700; font-size: 1rem; touch-action: manipulation; flex-shrink: 0; }
+  .row-item { display: grid; gap: 10px; align-items: start; margin-bottom: 12px; }
+  .row-horario { grid-template-columns: 1fr 1fr auto; }
+  .row-horario .row-label { grid-column: 1 / -1; font-size: 0.78rem; font-weight: 700; color: #718096; }
+  .row-horario .hor-fecha-wrap { grid-column: 1 / -1; }
+  .row-externo { grid-template-columns: 1fr auto; }
+  .row-externo .ext-nombre { grid-column: 1 / -1; }
+  .row-label { font-size: 0.8rem; font-weight: 700; color: #718096; white-space: nowrap; }
   .aforo-note { font-size: 0.78rem; color: #2b6cb0; margin-top: 4px; }
-  .disponibilidad-note { font-size: 0.78rem; color: #276749; margin-top: 3px; }
-  .fecha-nota { display: none; font-size: 0.75rem; color: #dd6b20; }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; padding: 16px; }
   .modal-overlay.show { display: flex; }
-  .modal-box { background: white; border-radius: 20px; padding: 44px 40px; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: popIn .3s ease; }
+  .modal-box { background: white; border-radius: 20px; padding: 36px 24px; text-align: center; max-width: 420px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: popIn .3s ease; }
   @keyframes popIn { from { transform:scale(.8); opacity:0; } to { transform:scale(1); opacity:1; } }
-  .modal-icon { font-size: 3.8rem; margin-bottom: 14px; }
-  .modal-box h2 { font-size: 1.3rem; margin-bottom: 10px; }
-  .modal-box p { font-size: 0.93rem; color: #4a5568; margin-bottom: 26px; line-height: 1.6; }
-  .modal-btn { padding: 11px 36px; border: none; border-radius: 10px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+  .modal-icon { font-size: 3.2rem; margin-bottom: 12px; }
+  .modal-box h2 { font-size: 1.2rem; margin-bottom: 10px; }
+  .modal-box p { font-size: 0.9rem; color: #4a5568; margin-bottom: 24px; line-height: 1.6; }
+  .modal-btn { padding: 12px 32px; border: none; border-radius: 10px; font-size: 0.97rem; font-weight: 700; cursor: pointer; touch-action: manipulation; }
   .modal-btn.success { background: linear-gradient(135deg, #2b6cb0, #4a5568); color: white; }
   .modal-btn.error { background: #e53e3e; color: white; }
+  @media (min-width: 600px) {
+    header { padding: 22px 28px; gap: 16px; }
+    header h1 { font-size: 1.2rem; }
+    .section { padding: 28px 24px; }
+    .card { padding: 24px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .row-horario { grid-template-columns: 72px 1.4fr 1fr 1fr auto; }
+    .row-horario .row-label { grid-column: auto; }
+    .row-horario .hor-fecha-wrap { grid-column: auto; }
+    .row-externo { grid-template-columns: 1fr 1fr auto; }
+    .row-externo .ext-nombre { grid-column: auto; }
+  }
+  @media (min-width: 900px) {
+    header { padding: 24px 32px; }
+    header h1 { font-size: 1.4rem; }
+    .section { padding: 32px; }
+    .card { padding: 28px; }
+    .modal-box { padding: 44px 40px; }
+  }
 </style>
 </head>
 <body>
@@ -63,7 +86,9 @@
   <button class="btn-admin-gear" id="btn-gear" title="Administrador">⚙️</button>
 </header>
 
-<div class="tabs"><div class="tab active">📋 Formulario de Reserva</div></div>
+<div class="tabs" id="tabs-bar">
+  <div class="tab active">📋 Formulario de Reserva</div>
+</div>
 
 <div class="section active" id="tab-form">
   <div class="card">
@@ -146,25 +171,35 @@
 <!-- MODAL ADMIN -->
 <div class="modal-overlay" id="modal-admin-login">
   <div class="modal-box">
-    <div class="modal-icon">🔐</div>
-    <h2 style="color:#2b6cb0;">Panel de Administración</h2>
-    <p style="margin-bottom:14px;">Ingresa la contraseña para continuar.</p>
-    <input type="password" id="admin-pw-input" placeholder="Contraseña" style="width:100%;margin-bottom:16px;text-align:center;"/>
-    <div style="display:flex;gap:12px;justify-content:center;">
-      <button class="modal-btn" style="background:#e2e8f0;color:#4a5568;" onclick="cerrarModal('modal-admin-login')">Cancelar</button>
-      <button class="modal-btn success" onclick="validarAdmin()">Entrar</button>
+    <div id="admin-step-login">
+      <div class="modal-icon">🔐</div>
+      <h2 style="color:#2b6cb0;">Panel de Administración</h2>
+      <p style="margin-bottom:14px;">Ingresa la contraseña para continuar.</p>
+      <input type="password" id="admin-pw-input" placeholder="Contraseña" style="width:100%;margin-bottom:16px;text-align:center;"/>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="modal-btn" style="background:#e2e8f0;color:#4a5568;" onclick="cerrarModal('modal-admin-login')">Cancelar</button>
+        <button class="modal-btn success" onclick="validarAdmin()">Entrar</button>
+      </div>
+      <p id="admin-pw-error" style="color:#e53e3e;font-size:0.82rem;margin-top:10px;display:none;">Contraseña incorrecta.</p>
     </div>
-    <p id="admin-pw-error" style="color:#e53e3e;font-size:0.82rem;margin-top:10px;display:none;">Contraseña incorrecta.</p>
+    <div id="admin-step-access" style="display:none;">
+      <div class="modal-icon">✅</div>
+      <h2 style="color:#276749;">Acceso concedido</h2>
+      <p style="margin-bottom:12px;">Copia el enlace y pégalo en una nueva pestaña.</p>
+      <div style="display:flex;align-items:center;gap:8px;background:#f0f4f8;border:1.5px solid #cbd5e0;border-radius:8px;padding:10px 12px;margin-bottom:16px;">
+        <span id="admin-url-text" style="font-size:0.75rem;color:#2d3748;word-break:break-all;flex:1;text-align:left;"></span>
+        <button onclick="copiarLink()" id="btn-copiar" style="flex-shrink:0;padding:6px 14px;background:#2b6cb0;color:white;border:none;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer;">📋 Copiar</button>
+      </div>
+      <p id="copied-msg" style="color:#276749;font-size:0.88rem;font-weight:700;margin-bottom:12px;display:none;background:#f0fff4;border:1.5px solid #9ae6b4;border-radius:8px;padding:8px 12px;">✅ ¡Enlace copiado! Pégalo en una nueva pestaña (Ctrl+V).</p>
+      <button class="modal-btn" style="background:#e2e8f0;color:#4a5568;" onclick="cerrarAdminAccess()">Cerrar</button>
+    </div>
   </div>
 </div>
 
 <script>
-  // ── Configuración ──────────────────────────────────────
   var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz7x9nSfpEXOKJ2Iw2Ae8cdVzLNAIDll96gKLZrQyzbldP3wLVYccznI3FJvq7Wlpdung/exec';
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
-  var today       = new Date().toISOString().split('T')[0];
-  var reservas    = [];
 
   var CORREOS_SEDE = {
     'Sede Ate':   'avegaj@cientifica.edu.pe',
@@ -173,18 +208,106 @@
   };
 
   var AFORO_ESPACIO = {
-    'Sala Gesell':               'Aforo máximo: 15 personas',
-    'Testoteca':                  'Aforo máximo: 10 personas',
-    'Consultorios de simulación': 'Aforo máximo: 6 personas por consultorio'
+    'Sala Gesell':               '👥 Aforo máximo: 15 personas',
+    'Testoteca':                  '👥 Aforo máximo: 10 personas',
+    'Consultorios de simulación': '👥 Aforo máximo: 6 personas por consultorio'
   };
 
-  var HORARIO_ESPACIO = {
-    'Sala Gesell':               '08:30 – 12:00 | 14:00 – 18:00',
-    'Testoteca':                  '08:00 – 13:00 | 14:00 – 18:00',
-    'Consultorios de simulación': '08:00 – 13:00 | 14:00 – 20:00'
+  var AFOROMAX = { 'Sala Gesell':15, 'Testoteca':10, 'Consultorios de simulación':6 };
+
+  function getTodayLocal() {
+    var d=new Date(), y=d.getFullYear();
+    var m=String(d.getMonth()+1).padStart(2,'0');
+    var day=String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  var today = getTodayLocal();
+  var reservas = [];
+
+  // ── Responsables por sede y día ──
+  var RESPONSABLES = {
+    'Sede Ate': {
+      1: [{nombre:'Alan',    inicio:'14:00',fin:'19:00'}],
+      2: [{nombre:'Enver',   inicio:'08:30',fin:'14:00'},{nombre:'Alan',inicio:'15:00',fin:'20:00'}],
+      3: [{nombre:'Armando', inicio:'08:30',fin:'14:00'}],
+      5: [{nombre:'Armando', inicio:'10:00',fin:'14:00'}]
+    },
+    'Sede Norte': {
+      1: [{nombre:'Maritza',inicio:'12:00',fin:'14:00'},{nombre:'Gladys',inicio:'11:30',fin:'14:00'},{nombre:'John',inicio:'16:30',fin:'18:00'}],
+      3: [{nombre:'Jenny',  inicio:'08:30',fin:'12:00'},{nombre:'John', inicio:'14:00',fin:'18:00'}],
+      4: [{nombre:'Gladys', inicio:'08:30',fin:'10:00'},{nombre:'Jenny',inicio:'08:30',fin:'14:00'}],
+      5: [{nombre:'Jenny',  inicio:'11:00',fin:'12:00'},{nombre:'Maritza',inicio:'12:00',fin:'14:00'},{nombre:'John',inicio:'14:00',fin:'20:00'}]
+    },
+    'Sede Villa': {
+      1: [{nombre:'Paul',    inicio:'12:00',fin:'14:00'},{nombre:'Francis',inicio:'14:00',fin:'17:00'},{nombre:'Maite',inicio:'18:00',fin:'20:00'}],
+      2: [{nombre:'Paul',    inicio:'08:30',fin:'11:00'},{nombre:'Francis',inicio:'14:00',fin:'17:00'}],
+      3: [{nombre:'Paul',    inicio:'08:30',fin:'11:00'},{nombre:'Verónica',inicio:'14:00',fin:'15:00'},{nombre:'Maité',inicio:'16:30',fin:'18:00'},{nombre:'Miluska',inicio:'17:00',fin:'20:00'}],
+      4: [{nombre:'Enver',   inicio:'08:30',fin:'11:00'},{nombre:'Keiko',inicio:'08:30',fin:'14:00'},{nombre:'Verónica',inicio:'14:00',fin:'18:00'},{nombre:'Maite',inicio:'14:00',fin:'18:00'}],
+      5: [{nombre:'Miluska', inicio:'19:00',fin:'20:00'}]
+    }
   };
 
-  // ── Storage ────────────────────────────────────────────
+  function getFranjasDisponibles(sede, fecha) {
+    if (!sede || !fecha) return [];
+    var d = new Date(fecha+'T12:00:00');
+    var dow = d.getDay();
+    return ((RESPONSABLES[sede]||{})[dow])||[];
+  }
+
+  function estaEnFranja(franjas, hora) {
+    var m = timeToMin(hora);
+    return franjas.some(function(f){ return m>=timeToMin(f.inicio)&&m<=timeToMin(f.fin); });
+  }
+
+  function actualizarHorasDisponibles(fila, sede, fecha) {
+    var franjas = getFranjasDisponibles(sede, fecha);
+    var sinAtencion = franjas.length===0 && !!fecha;
+    var espacio = document.getElementById('espacio').value;
+    var ocupados = fecha ? getHorariosOcupados(sede, espacio, fecha) : [];
+    var ahora = new Date();
+    var horaActualMin = ahora.getHours()*60 + ahora.getMinutes();
+    var esHoy = (fecha === getTodayLocal());
+
+    ['.hor-hora','.hor-hora-fin'].forEach(function(cls) {
+      var sel = fila.querySelector(cls);
+      if (!sel) return;
+      var prevVal = sel.value;
+      Array.from(sel.options).forEach(function(opt) {
+        if (!opt.value) return;
+        var optMin = timeToMin(opt.value);
+        var pasado = esHoy && optMin <= horaActualMin;
+        var enFranja = estaEnFranja(franjas, opt.value);
+        var bloqueado = cls==='.hor-hora' && ocupados.some(function(o){ return opt.value>=o.inicio&&opt.value<o.fin; });
+        var habilitada = !pasado && enFranja && !bloqueado;
+        opt.disabled = !habilitada;
+        opt.style.color = habilitada ? '' : '#ccc';
+      });
+      if (prevVal && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].disabled) sel.value='';
+    });
+
+    var nota = fila.querySelector('.fecha-nota');
+    if (nota) {
+      if (sinAtencion) {
+        nota.textContent = '✖ Sin atención este día';
+        nota.style.cssText = 'color:#e53e3e;font-size:0.75rem;display:block;margin-top:2px;';
+      } else if (!!fecha && franjas.length>0) {
+        var uniq = franjas.map(function(f){ return f.inicio+' – '+f.fin; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+        nota.textContent = '✔ Disponible: '+uniq.join(' | ');
+        nota.style.cssText = 'color:#276749;font-size:0.72rem;display:block;margin-top:2px;';
+      } else {
+        nota.style.display = 'none';
+      }
+    }
+  }
+
+  function calcularResponsable(sede, fecha, horaInicio) {
+    if (!sede||!fecha||!horaInicio) return '';
+    var franjas = getFranjasDisponibles(sede, fecha);
+    var m = timeToMin(horaInicio);
+    return franjas.filter(function(f){ return m>=timeToMin(f.inicio)&&m<timeToMin(f.fin); }).map(function(f){ return f.nombre; }).join(', ');
+  }
+
+  // ── Storage ──
   async function cargarReservas() {
     try { if(window.storage){ var r=await window.storage.get('psico_reservas_v1',true); if(r&&r.value) reservas=JSON.parse(r.value); } } catch(e){}
     try { var l=localStorage.getItem('psico_reservas_v1'); if(l&&!reservas.length) reservas=JSON.parse(l); } catch(e){}
@@ -195,80 +318,75 @@
     try { localStorage.setItem('psico_reservas_v1',d); } catch(e){}
   }
 
-  // ── Sheets ────────────────────────────────────────────
+  // ── Sheets ──
   async function enviarASheets(reg) {
     try {
-      var res = await fetch(SHEETS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg) });
-      return await res.json();
-    } catch(e) { return { ok:true, mensaje:'' }; }
+      await fetch(SHEETS_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg) });
+      return { ok:true };
+    } catch(e) { return { ok:true }; }
   }
 
-  // ── Modales ───────────────────────────────────────────
+  // ── Modales ──
   function mostrarError(msg) { document.getElementById('modal-error-msg').innerHTML=msg; document.getElementById('modal-error').classList.add('show'); }
   function cerrarModal(id) { document.getElementById(id).classList.remove('show'); }
 
-  // ── Admin ─────────────────────────────────────────────
+  // ── Admin ──
   function validarAdmin() {
-    if(document.getElementById('admin-pw-input').value===ADMIN_PASS){
-      cerrarModal('modal-admin-login');
-      window.open(SHEETS_LINK,'_blank');
+    var inp=document.getElementById('admin-pw-input');
+    if(inp.value===ADMIN_PASS){
+      inp.value='';
+      document.getElementById('admin-pw-error').style.display='none';
+      document.getElementById('admin-step-login').style.display='none';
+      document.getElementById('admin-url-text').textContent=SHEETS_LINK;
+      document.getElementById('copied-msg').style.display='none';
+      document.getElementById('admin-step-access').style.display='block';
     } else {
       document.getElementById('admin-pw-error').style.display='block';
-      document.getElementById('admin-pw-input').focus();
+      inp.focus();
     }
   }
 
-  // ── Validaciones ──────────────────────────────────────
+  function copiarLink() {
+    function exito() {
+      var msg=document.getElementById('copied-msg'), btn=document.getElementById('btn-copiar');
+      msg.style.display='block'; btn.textContent='✓ Copiado'; btn.style.background='#276749';
+      setTimeout(function(){ btn.textContent='📋 Copiar'; btn.style.background='#2b6cb0'; msg.style.display='none'; },3000);
+    }
+    function fallback() {
+      var ta=document.createElement('textarea'); ta.value=SHEETS_LINK; ta.style.cssText='position:fixed;opacity:0;';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ if(document.execCommand('copy')) exito(); }catch(e){}
+      document.body.removeChild(ta);
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(SHEETS_LINK).then(exito).catch(fallback);
+    else fallback();
+  }
+
+  function cerrarAdminAccess() {
+    cerrarModal('modal-admin-login');
+    setTimeout(function(){ document.getElementById('admin-step-login').style.display='block'; document.getElementById('admin-step-access').style.display='none'; },300);
+  }
+
+  // ── Validaciones ──
   var reCorreo=/^[^\s@]+@cientifica\.edu\.pe$/;
   var reTelefono=/^9\d{8}$/;
   var reDNI=/^\d{8}$/;
   function limpiarErrores(){ document.querySelectorAll('.field-error').forEach(function(el){ el.classList.remove('field-error'); }); }
   function marcarError(id){ var el=document.getElementById(id); if(el) el.classList.add('field-error'); }
 
-  // ── Horas (select dinámico) ───────────────────────────
-  function getMinHora(fecha) {
-    if(fecha!==today) return null;
-    var ahora=new Date();
-    var hh=ahora.getHours(), mm=Math.ceil(ahora.getMinutes()/15)*15;
-    if(mm>=60){ hh+=1; mm=0; }
-    return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');
-  }
-
-  function generarOpcionesHora(sel, minTime) {
-    var val=sel.value;
-    sel.innerHTML='<option value="">--</option>';
-    for(var h=7;h<=22;h++){
-      for(var m=0;m<60;m+=15){
-        if(h===22&&m>0) continue;
-        var t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
-        if(minTime&&t<minTime) continue;
-        var o=document.createElement('option');
-        o.value=t; o.textContent=t;
-        if(t===val) o.selected=true;
-        sel.appendChild(o);
-      }
-    }
-  }
-
-  // ── Conflictos ────────────────────────────────────────
+  // ── Tiempo ──
   function timeToMin(t){ var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
   function minToTime(m){ return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
 
   function getHorariosOcupados(sede,espacio,fecha){
     var oc=[];
     reservas.forEach(function(r){
-      if(r.espacio===espacio&&r.sede===sede){
-        r.horarios.split('|').forEach(function(h){
-          var p=h.trim().split(' ');
-          if(p[0]===fecha&&p[1]&&p[3]) oc.push({inicio:p[1],fin:p[3]});
-        });
-      }
+      if(r.espacio===espacio&&r.sede===sede) r.horarios.split('|').forEach(function(h){ var p=h.trim().split(' '); if(p[0]===fecha&&p[1]&&p[3]) oc.push({inicio:p[1],fin:p[3]}); });
     });
     return oc;
   }
 
   function hayConflicto(oc,ini,fin){ return oc.some(function(o){ return ini<o.fin&&fin>o.inicio; }); }
-
   function hayConflictoMin(oc,s,e){ return oc.some(function(o){ return s<timeToMin(o.fin)&&e>timeToMin(o.inicio); }); }
 
   function sugerirHorario(oc,ini,fin){
@@ -283,64 +401,38 @@
     return cands[0];
   }
 
-  function getFechasConReserva(sede,espacio){
-    var b={};
-    reservas.forEach(function(r){ if(r.espacio===espacio&&r.sede===sede) r.horarios.split('|').forEach(function(h){ var f=h.trim().split(' ')[0]; if(f) b[f]=true; }); });
-    return Object.keys(b);
-  }
-
-  // ── Espacio ───────────────────────────────────────────
+  // ── Espacio ──
   function onEspacioChange(){
     var espacio=document.getElementById('espacio').value;
     var note=document.getElementById('aforo-note');
-    if(espacio&&AFORO_ESPACIO[espacio]){
-      note.textContent='👥 '+AFORO_ESPACIO[espacio];
-      note.style.display='block';
-    } else { note.style.display='none'; }
-    actualizarTodasLasFechas();
+    note.textContent=AFORO_ESPACIO[espacio]||'';
+    note.style.display=espacio&&AFORO_ESPACIO[espacio]?'block':'none';
+    var sede=document.getElementById('sede').value;
+    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){
+      var fecha=fila.querySelector('.hor-fecha')?fila.querySelector('.hor-fecha').value:'';
+      actualizarHorasDisponibles(fila,sede,fecha);
+    });
   }
 
   function onSedeChange(){
     var sede=document.getElementById('sede').value;
-    var sel=document.getElementById('espacio');
-    var actual=sel.value;
+    var sel=document.getElementById('espacio'), actual=sel.value;
     sel.innerHTML='<option value="">-- Seleccionar --</option>';
     if(sede==='Sede Villa') sel.innerHTML+='<option>Consultorios de simulación</option>';
     else sel.innerHTML+='<option>Sala Gesell</option><option>Testoteca</option>';
     var opts=Array.from(sel.options).map(function(o){ return o.value; });
     sel.value=opts.indexOf(actual)!==-1?actual:'';
     onEspacioChange();
-  }
-
-  // ── Horarios ──────────────────────────────────────────
-  function actualizarTodasLasFechas(){
-    var espacio=document.getElementById('espacio').value;
-    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){ actualizarEstadoFecha(fila,espacio); });
-  }
-
-  function actualizarEstadoFecha(fila,espacio){
-    if(!espacio) return;
-    var sede=document.getElementById('sede').value;
-    var inputFecha=fila.querySelector('.hor-fecha');
-    var nota=fila.querySelector('.fecha-nota');
-    var dispNote=fila.querySelector('.disp-note');
-    var fechaVal=inputFecha.value;
-    var tieneAlgo=getFechasConReserva(sede,espacio).indexOf(fechaVal)!==-1;
-    inputFecha.style.borderColor=tieneAlgo?'#dd6b20':'#cbd5e0';
-    inputFecha.style.background=tieneAlgo?'#fffaf0':'#f7fafc';
-    if(nota) nota.style.display=tieneAlgo?'block':'none';
-    if(dispNote&&HORARIO_ESPACIO[espacio]&&fechaVal){
-      dispNote.textContent='✓ Disponible: '+HORARIO_ESPACIO[espacio];
-      dispNote.style.display='block';
-    } else if(dispNote){ dispNote.style.display='none'; }
+    document.querySelectorAll('#horarios-lista > div').forEach(function(fila){
+      var fecha=fila.querySelector('.hor-fecha')?fila.querySelector('.hor-fecha').value:'';
+      actualizarHorasDisponibles(fila,sede,fecha);
+    });
   }
 
   function onFechaChange(input){
     var fila=input.closest('.row-item');
-    var minH=getMinHora(input.value);
-    generarOpcionesHora(fila.querySelector('.hor-hora'),minH);
-    generarOpcionesHora(fila.querySelector('.hor-hora-fin'),minH);
-    actualizarEstadoFecha(fila,document.getElementById('espacio').value);
+    var sede=document.getElementById('sede').value;
+    actualizarHorasDisponibles(fila,sede,input.value);
   }
 
   function agregarHorario(){
@@ -348,34 +440,24 @@
     var idx=lista.children.length+1;
     var div=document.createElement('div');
     div.className='row-item row-horario';
-    var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this)">✕</button>':'<span></span>';
-    div.innerHTML=
-      '<span class="row-label">Opción '+idx+'</span>'
-      +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +  '<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
-      +  '<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
-      +  '<span class="fecha-nota" style="font-size:0.75rem;color:#dd6b20;display:none;">⚠ Esta fecha tiene reservas</span>'
-      +  '<span class="disp-note disponibilidad-note" style="display:none;"></span>'
+    var removeBtn=idx>1?'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'horarios-lista\',\'Opción\')">✕</button>':'<span></span>';
+    var opts='<option value="">--</option>';
+    for(var h=7;h<=22;h++) for(var m=0;m<60;m+=15){ if(h===22&&m>0) continue; var t=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); opts+='<option value="'+t+'">'+t+'</option>'; }
+    div.innerHTML='<span class="row-label">Opción '+idx+'</span>'
+      +'<div class="hor-fecha-wrap" style="display:flex;flex-direction:column;gap:3px;">'
+      +'<label style="font-size:0.75rem;color:#718096;">Fecha</label>'
+      +'<input type="date" min="'+today+'" class="hor-fecha" onchange="onFechaChange(this)"/>'
+      +'<span class="fecha-nota" style="display:none;"></span>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +  '<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
-      +  '<select class="hor-hora"></select>'
+      +'<label style="font-size:0.75rem;color:#718096;">Inicio</label>'
+      +'<select class="hor-hora sel-hora">'+opts+'</select>'
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:3px;">'
-      +  '<label style="font-size:0.75rem;color:#718096;">Fin</label>'
-      +  '<select class="hor-hora-fin"></select>'
-      +'</div>'
-      +removeBtn;
+      +'<label style="font-size:0.75rem;color:#718096;">Fin</label>'
+      +'<select class="hor-hora-fin sel-hora">'+opts+'</select>'
+      +'</div>'+removeBtn;
     lista.appendChild(div);
-    generarOpcionesHora(div.querySelector('.hor-hora'), null);
-    generarOpcionesHora(div.querySelector('.hor-hora-fin'), null);
-  }
-
-  function eliminarFila(btn){
-    btn.parentElement.remove();
-    document.querySelectorAll('#horarios-lista > div').forEach(function(d,i){
-      var l=d.querySelector('.row-label'); if(l) l.textContent='Opción '+(i+1);
-    });
   }
 
   function toggleExternos(){
@@ -385,19 +467,23 @@
   }
 
   function agregarExterno(){
-    var div=document.createElement('div');
-    div.className='row-item row-externo';
+    var div=document.createElement('div'); div.className='row-item row-externo';
     div.innerHTML='<input type="text" placeholder="Nombre completo" class="ext-nombre"/>'
       +'<input type="text" placeholder="DNI (8 dígitos)" maxlength="8" class="ext-dni"/>'
-      +'<button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>';
+      +'<button type="button" class="btn-remove" onclick="eliminarFila(this,\'externos-lista\',null)">✕</button>';
     document.getElementById('externos-lista').appendChild(div);
+  }
+
+  function eliminarFila(btn,listaId,labelPrefix){
+    btn.parentElement.remove();
+    if(labelPrefix) document.querySelectorAll('#'+listaId+' > div').forEach(function(d,i){ var l=d.querySelector('.row-label'); if(l) l.textContent=labelPrefix+' '+(i+1); });
   }
 
   function getVal(id){ return document.getElementById(id).value.trim(); }
 
-  // ── Submit ────────────────────────────────────────────
   async function submitForm(){
     limpiarErrores();
+    var btnSubmit=document.querySelector('.btn-submit'), btnOrig=btnSubmit.textContent;
     var nombre=getVal('nombre'),correo=getVal('correo'),telefono=getVal('telefono');
     var sede=getVal('sede'),tipo=getVal('tipo'),modalidad=getVal('modalidad');
     var curso=getVal('curso'),espacio=getVal('espacio'),personas=getVal('personas'),motivo=getVal('motivo');
@@ -413,14 +499,7 @@
     if(!curso){ marcarError('curso'); mostrarError('El campo <b>Curso</b> es obligatorio.'); return; }
     if(!espacio){ marcarError('espacio'); mostrarError('Selecciona el <b>Espacio a reservar</b>.'); return; }
     if(!personas||parseInt(personas)<1){ marcarError('personas'); mostrarError('El <b>Número de personas</b> debe ser al menos 1.'); return; }
-
-    // Validar aforo
-    var aforoMax={'Sala Gesell':15,'Testoteca':10,'Consultorios de simulación':6};
-    if(aforoMax[espacio]&&parseInt(personas)>aforoMax[espacio]){
-      marcarError('personas');
-      mostrarError('El <b>'+espacio+'</b> tiene un aforo máximo de <b>'+aforoMax[espacio]+' personas</b>.');
-      return;
-    }
+    if(AFOROMAX[espacio]&&parseInt(personas)>AFOROMAX[espacio]){ marcarError('personas'); mostrarError('El <b>'+espacio+'</b> tiene aforo máximo de <b>'+AFOROMAX[espacio]+' personas</b>.'); return; }
 
     var filasHor=document.querySelectorAll('#horarios-lista > div');
     if(!filasHor.length){ mostrarError('Agrega al menos una <b>opción de horario</b>.'); return; }
@@ -430,6 +509,7 @@
       var ti=filasHor[h].querySelector('.hor-hora').value;
       var tf=filasHor[h].querySelector('.hor-hora-fin').value;
       if(!f){ mostrarError('Completa la <b>fecha</b> en la Opción '+(h+1)+'.'); return; }
+      if(f<getTodayLocal()){ mostrarError('La <b>fecha</b> de la Opción '+(h+1)+' es en el pasado.'); return; }
       if(!ti){ mostrarError('Completa la <b>hora de inicio</b> en la Opción '+(h+1)+'.'); return; }
       if(!tf){ mostrarError('Completa la <b>hora de fin</b> en la Opción '+(h+1)+'.'); return; }
       if(tf<=ti){ mostrarError('En la Opción '+(h+1)+', la <b>hora de fin</b> debe ser mayor a la de inicio.'); return; }
@@ -438,9 +518,10 @@
         var sug=sugerirHorario(oc,ti,tf);
         var msg='El horario <b>'+ti+' – '+tf+'</b> en la Opción '+(h+1)+' ya está reservado.';
         if(sug) msg+='<br><br>💡 <b>Horario sugerido:</b> '+sug.inicio+' – '+sug.fin;
-        else msg+='<br><br>No hay horarios disponibles ese día. Por favor elige otro.';
+        else msg+='<br><br>No hay horarios disponibles ese día.';
         mostrarError(msg); return;
       }
+      if(!calcularResponsable(sede,f,ti)){ mostrarError('La Opción '+(h+1)+' no tiene personal disponible para ese día y horario.<br><small>Por favor elige un día y turno con atención disponible.</small>'); return; }
       horarios.push(f+' '+ti+' - '+tf);
     }
 
@@ -463,21 +544,15 @@
       externosStr=pext.join(' | ');
     }
 
-    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,
-              horarios:horarios.join(' | '),motivo,
-              externos:tieneExternos?'Sí':'No',externosStr,
-              correoSede: CORREOS_SEDE[sede]||'' };
+    var responsableStr=horarios.map(function(h,i){ var p=h.split(' '); return 'Op.'+(i+1)+': '+(calcularResponsable(sede,p[0],p[1])||'—'); }).join(' | ');
+    var reg={ nombre,correo,telefono,sede,tipo,modalidad,curso,espacio,personas,horarios:horarios.join(' | '),motivo,externos:tieneExternos?'Sí':'No',externosStr,responsable:responsableStr,correoSede:CORREOS_SEDE[sede]||'' };
 
-    var resultado=await enviarASheets(reg);
-    if(resultado&&resultado.ok===false){
-      mostrarError(resultado.mensaje||'El horario ya está reservado. Por favor elige otra opción.');
-      return;
-    }
-
+    btnSubmit.disabled=true; btnSubmit.textContent='⏳ Enviando...'; btnSubmit.style.opacity='0.75';
+    await enviarASheets(reg);
     reservas.push(reg);
     await guardarReservas();
+    btnSubmit.disabled=false; btnSubmit.textContent=btnOrig; btnSubmit.style.opacity='';
 
-    // Reset
     ['nombre','correo','telefono','sede','tipo','modalidad','curso','espacio','personas','motivo'].forEach(function(f){ document.getElementById(f).value=''; });
     document.getElementById('horarios-lista').innerHTML='';
     document.getElementById('externos-toggle').value='no';
@@ -492,16 +567,17 @@
       +'Nuestro equipo revisará la disponibilidad del espacio y del personal responsable '
       +'para el horario solicitado, y <b>te contactaremos en un plazo de 24 a 48 horas</b> '
       +'para confirmar o coordinar una alternativa.<br><br>'
-      +'Si tienes alguna consulta, puedes escribirnos a '
-      +'<a href="mailto:'+correoSede+'" style="color:#2b6cb0;font-weight:600;">'+correoSede+'</a>.';
+      +(correoSede?'Si tienes alguna consulta, escríbenos a <a href="mailto:'+correoSede+'" style="color:#2b6cb0;font-weight:600;">'+correoSede+'</a>.':'');
     document.getElementById('modal-exito').classList.add('show');
   }
 
-  // ── Init ──────────────────────────────────────────────
+  // ── Init ──
   document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('btn-gear').addEventListener('click', function(){
       document.getElementById('admin-pw-input').value='';
       document.getElementById('admin-pw-error').style.display='none';
+      document.getElementById('admin-step-login').style.display='block';
+      document.getElementById('admin-step-access').style.display='none';
       document.getElementById('modal-admin-login').classList.add('show');
       setTimeout(function(){ document.getElementById('admin-pw-input').focus(); },150);
     });
