@@ -201,6 +201,46 @@
 
 <script>
   var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbz7x9nSfpEXOKJ2Iw2Ae8cdVzLNAIDll96gKLZrQyzbldP3wLVYccznI3FJvq7Wlpdung/exec';
+
+  // Envío robusto: primero fetch JSON, si falla usa iframe form
+  function enviarASheets(reg) {
+    return new Promise(function(resolve) {
+      // Intento 1: fetch con JSON
+      fetch(SHEETS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reg)
+      }).then(function() {
+        resolve({ ok: true });
+      }).catch(function() {
+        // Intento 2: iframe form POST
+        try {
+          var ts = Date.now(), ifrNom = 'hf_' + ts;
+          var iframe = document.createElement('iframe');
+          iframe.name = ifrNom;
+          iframe.style.cssText = 'display:none;position:fixed;top:-9999px;';
+          document.body.appendChild(iframe);
+          var form = document.createElement('form');
+          form.method = 'POST'; form.action = SHEETS_URL;
+          form.target = ifrNom; form.enctype = 'application/x-www-form-urlencoded';
+          form.style.display = 'none';
+          Object.keys(reg).forEach(function(k) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = k; inp.value = String(reg[k]);
+            form.appendChild(inp);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          setTimeout(function() {
+            try { document.body.removeChild(form); } catch(e) {}
+            try { document.body.removeChild(iframe); } catch(e) {}
+            resolve({ ok: true });
+          }, 4000);
+        } catch(err) { resolve({ ok: true }); }
+      });
+    });
+  }
   var SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1ElDCmJx_5dFHSZjS9VNgCrGt79mwTsmLOcraRGXCGH0/edit?usp=sharing';
   var ADMIN_PASS  = 'psicocientifica2026';
 
@@ -363,34 +403,7 @@
     try { localStorage.setItem('psico_reservas_v1',d); } catch(e){}
   }
 
-  // ── Envío via iframe (evita bloqueo CORS y garantiza llegada al script) ──
-  function enviarASheets(reg) {
-    return new Promise(function(resolve) {
-      try {
-        var ts=Date.now(), ifrNom='hf_'+ts;
-        var iframe=document.createElement('iframe');
-        iframe.name=ifrNom;
-        iframe.style.cssText='display:none;position:fixed;top:-9999px;';
-        document.body.appendChild(iframe);
-        var form=document.createElement('form');
-        form.method='POST'; form.action=SHEETS_URL;
-        form.target=ifrNom; form.enctype='application/x-www-form-urlencoded';
-        form.style.display='none';
-        Object.keys(reg).forEach(function(k){
-          var inp=document.createElement('input');
-          inp.type='hidden'; inp.name=k; inp.value=String(reg[k]);
-          form.appendChild(inp);
-        });
-        document.body.appendChild(form);
-        form.submit();
-        setTimeout(function(){
-          try{document.body.removeChild(form);}catch(e){}
-          try{document.body.removeChild(iframe);}catch(e){}
-          resolve({ok:true});
-        },4000);
-      } catch(err){ resolve({ok:true}); }
-    });
-  }
+
 
   // ── Modales ──
   function mostrarError(msg) { document.getElementById('modal-error-msg').innerHTML=msg; document.getElementById('modal-error').classList.add('show'); }
